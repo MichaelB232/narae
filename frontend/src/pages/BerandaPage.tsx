@@ -26,6 +26,8 @@ const navyCardClass =
 const headingClass = "text-sm font-bold text-slate-900";
 const headingBlueClass = "text-sm font-bold text-slate-900 bg-linear-to-r from-[#426783] to-[#A8C1D1] p-4";
 
+const descriptionClass = "text-xs leading-relaxed text-slate-500";
+
 const buttonBaseClass =
   "inline-flex items-center justify-center rounded-xl px-3 py-2.5 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50";
 
@@ -123,20 +125,13 @@ export function BerandaPage() {
     }
   }
 
-  async function handleLaterFromSheet() {
+  function handleLaterFromSheet() {
     if (!sheetItem) return;
 
     const currentId = Number(sheetItem.id);
 
-    try {
-      await api.expireHelp(currentId);
-    } catch (e) {
-      console.warn("Expire help warning:", e);
-    }
-
     setDismissedIds((prev) => new Set(prev).add(currentId));
     setSheetItem(null);
-    loadHelp();
   }
 
   // No registered patients.
@@ -166,9 +161,6 @@ export function BerandaPage() {
           patient={patients[0]}
           nurseId={user.id}
           nurseName={user.full_name}
-          helpRequests={helpRequests}
-          onOpenCall={(h) => setSheetItem(h)}
-          onReloadHelp={loadHelp}
           navigate={navigate}
         />
 
@@ -190,7 +182,6 @@ export function BerandaPage() {
         nurseId={user.id}
         nurseName={user.full_name}
         onOpenCall={(h) => setSheetItem(h)}
-        onReloadHelp={loadHelp}
         navigate={navigate}
       />
 
@@ -209,17 +200,11 @@ function SingleDashboard({
   patient,
   nurseId,
   nurseName,
-  helpRequests,
-  onOpenCall,
-  onReloadHelp,
   navigate,
 }: {
   patient: PatientListItem;
   nurseId: number;
   nurseName: string;
-  helpRequests: HelpRequestItem[];
-  onOpenCall: (h: HelpRequestItem) => void;
-  onReloadHelp: () => void;
   navigate: (p: string) => void;
 }) {
   const [detail, setDetail] = useState<PatientDetail | null>(null);
@@ -252,14 +237,6 @@ function SingleDashboard({
 
   const age = calcAge(detail.patient.date_of_birth);
 
-  const activeCalls = helpRequests.filter(
-    (h) => (h.status === "PENDING" || h.status === "ACKNOWLEDGED") && h.patient_id === patient.id
-  );
-
-  const missedCalls = helpRequests.filter(
-    (h) => h.status === "EXPIRED" && h.patient_id === patient.id
-  );
-
   async function confirm(taskId: number, approve: boolean) {
     await api.confirmTask(taskId, nurseId, approve);
     load();
@@ -269,7 +246,7 @@ function SingleDashboard({
     <div className="min-h-screen bg-[#FDFBF7] text-slate-800 pb-24 font-sans antialiased">
 
       {/* ================= HEADER BIRU DENGAN LENGKUNGAN ================= */}
-      <div className="relative bg-gradient-to-b from-[#64849B] to-[#7E9EB2] pt-10 pb-20 px-6 text-white">
+      <div className="relative bg-gradient-to-b from-[#64849B] to-[#7E9EB2] pt-[64px] pb-20 px-6 text-white">
 
         {/* Logo */}
         <h1 className="text-xl font-bold tracking-wider">narae.</h1>
@@ -281,136 +258,6 @@ function SingleDashboard({
             Ringkasan pendampingan pasien untuk hari ini.
           </p>
         </div>
-      </section>
-
-      {/* MISSED CALLS IN SINGLE DASHBOARD */}
-      {missedCalls.length > 0 && (
-        <section>
-          <div className="mb-2 flex items-center justify-between">
-            <h2 className="flex items-center gap-2 text-sm font-bold text-rose-800">
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75"></span>
-                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-rose-500"></span>
-              </span>
-              Panggilan Terlewat (Missed Call)
-            </h2>
-            <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-700">
-              {missedCalls.length} Panggilan
-            </span>
-          </div>
-
-          <div className="flex flex-col gap-3">
-            {missedCalls.map((h) => (
-              <div
-                key={h.id}
-                className="relative rounded-2xl border border-rose-200 bg-rose-50/70 p-4"
-              >
-                <div className="mb-2 flex items-center gap-3">
-                  <Avatar name={h.patient_name} />
-                  <div className="min-w-0">
-                    <h3 className="truncate text-sm font-bold text-slate-800">
-                      {h.patient_name}
-                    </h3>
-                    <p className="text-xs font-medium text-rose-600">
-                      Panggilan tidak terjawab (10 detik)
-                    </p>
-                  </div>
-                </div>
-
-                {h.patient_speech_transcript && (
-                  <div className="mb-3 rounded-xl border border-rose-100 bg-white p-2.5 text-xs text-slate-700">
-                    <p className="mb-0.5 text-[10px] font-bold tracking-wide text-rose-600">
-                      PESAN PASIEN
-                    </p>
-                    "{h.patient_speech_transcript}"
-                  </div>
-                )}
-
-                <div className="flex gap-2">
-                  <button
-                    className={`flex-1 ${approveButtonClass}`}
-                    onClick={async () => {
-                      await api.resolveHelp(h.id);
-                      onReloadHelp();
-                    }}
-                  >
-                    ✓ Tandai Selesai
-                  </button>
-                  <button
-                    className={`flex-1 ${navyButtonClass}`}
-                    onClick={() => navigate(`/keluarga/${h.patient_id}`)}
-                  >
-                    Cek Pasien
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* ACTIVE CALLS IN SINGLE DASHBOARD */}
-      {activeCalls.length > 0 && (
-        <section>
-          <h2 className="mb-2 text-sm font-bold text-slate-800">
-            Panggilan Menunggu Respons
-          </h2>
-
-          <div className="flex flex-col gap-3">
-            {activeCalls.map((h) => (
-              <div
-                key={h.id}
-                className="relative rounded-2xl border border-rose-200 bg-rose-50 p-4"
-              >
-                <span className="absolute right-4 top-4 rounded-full bg-rose-100 px-2.5 py-1 text-[9px] font-bold tracking-wide text-rose-700">
-                  URGENT
-                </span>
-
-                <div className="mb-3 flex items-center gap-3 pr-16">
-                  <Avatar name={h.patient_name} />
-                  <div className="min-w-0">
-                    <h3 className="truncate text-sm font-bold text-slate-800">
-                      {h.patient_name}
-                    </h3>
-                    <p className="text-xs text-slate-500">
-                      {h.room_number ?? ""}
-                    </p>
-                  </div>
-                </div>
-
-                {h.patient_speech_transcript && (
-                  <div className="mb-3 rounded-xl border border-rose-100 bg-white p-3">
-                    <p className="mb-1 text-[10px] font-bold tracking-wide text-rose-600">
-                      PESAN PASIEN
-                    </p>
-                    <p className="text-xs leading-relaxed text-slate-700">
-                      "{h.patient_speech_transcript}"
-                    </p>
-                  </div>
-                )}
-
-                <button
-                  className={`${buttonBaseClass} w-full bg-rose-600 text-white hover:bg-rose-700`}
-                  onClick={() => onOpenCall(h)}
-                >
-                  Tangani
-                </button>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* DAILY TIMELINE */}
-      <section className={cardClass}>
-        <div className={headingBlueClass}>
-          <h2 className="text-white">
-            {total === 0
-              ? "Belum Ada Jadwal Hari Ini"
-              : done === total
-                ? "Hari ini Berjalan Sangat Baik"
-                : "Hari ini Sedang Berjalan"}
-          </h2>
 
         {/* SVG Wave / Kurva di Bagian Bawah Header */}
         <div className="absolute bottom-0 left-0 right-0 overflow-hidden leading-none pointer-events-none">
@@ -424,10 +271,46 @@ function SingleDashboard({
         </div>
       </div>
 
-        <div className="flex flex-col gap-1 p-4">
-          {detail.todayTasks.map((t) => (
-            <TimelineRow key={t.id} task={t} />
-          ))}
+
+      {/* ================= KONTEN UTAMA (CARD CONTAINER) ================= */}
+      {/* Menggunakan -mt-12 agar card naik dan menumpang di atas header biru */}
+      <div className="px-5 -mt-12 relative z-10 max-w-md mx-auto space-y-4">
+
+        {/* --- Card 1: Profil Pasien (Ibu Odette) --- */}
+        <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <img
+              src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=150"
+              // name={detail.patient.name}
+              alt="Ibu Odette"
+              className="w-14 h-14 rounded-full object-cover"
+            />
+            <div>
+              <p className="text-xs text-slate-400 font-medium">Kamu Mendampingi</p>
+              <h3 className="text-base font-bold text-slate-800">{detail.patient.name}</h3>
+            </div>
+          </div>
+
+          <div className="text-right flex">
+            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold mb-1">
+              <span
+                className={`rounded-full px-2 py-1 text-[10px] font-semibold ${detail.patient.is_online
+                  ? "bg-emerald-50 text-emerald-700"
+                  : "bg-slate-100 text-slate-500"
+                  }`}
+              >
+                {detail.patient.is_online ? "• Online" : "• Offline"}
+              </span>
+              <span
+                className={`rounded-full px-2 py-1 text-[10px] font-semibold ${detail.patient.is_online
+                  ? "text-emerald-50 bg-emerald-700"
+                  : "text-slate-100 bg-slate-500"
+                  }`}
+              >
+                67%
+              </span>
+            </div>
+          </div>
         </div>
 
 
@@ -473,7 +356,6 @@ function MultiDashboard({
   nurseId,
   nurseName,
   onOpenCall,
-  onReloadHelp,
   navigate,
 }: {
   patients: PatientListItem[];
@@ -481,7 +363,6 @@ function MultiDashboard({
   nurseId: number;
   nurseName: string;
   onOpenCall: (h: HelpRequestItem) => void;
-  onReloadHelp: () => void;
   navigate: (p: string) => void;
 }) {
   const [selectedId, setSelectedId] = useState(patients[0].id);
@@ -498,10 +379,6 @@ function MultiDashboard({
     (h) => h.status === "PENDING" || h.status === "ACKNOWLEDGED"
   );
 
-  const missedCalls = helpRequests.filter(
-    (h) => h.status === "EXPIRED"
-  );
-
   const onlineCount = patients.filter((p) => p.is_online).length;
 
   const pendingMulti =
@@ -515,310 +392,238 @@ function MultiDashboard({
   }
 
   return (
-    <div className="min-h-screen bg-[#FDFBF7] text-slate-800 pb-24 font-sans antialiased">
+    <div className="min-h-screen bg-[#FDFBF7] text-slate-800 pb-24 font-sans antialiased no-scrollbar overflow-y-auto">
 
-  {/* ================= HEADER BIRU DENGAN LENGKUNGAN ================= */}
-  <div className="relative bg-gradient-to-b from-[#64849B] to-[#7E9EB2] pt-10 pb-20 px-6 text-white">
+      {/* ================= HEADER BIRU DENGAN LENGKUNGAN ================= */}
+      <div className="relative bg-gradient-to-b from-[#64849B] to-[#7E9EB2] pt-[64px] pb-20 px-6 text-white">
 
-    {/* Logo */}
-    <h1 className="text-xl font-bold tracking-wider">narae.</h1>
+        {/* Logo */}
+        <h1 className="text-xl font-bold tracking-wider">narae.</h1>
 
-    {/* Sambutan */}
-    <div className="mt-5">
-      <h2 className="text-2xl font-bold">
-        Selamat Pagi, {nurseName.split(" ")[1] ?? nurseName}
-      </h2>
-      <p className="text-xs text-slate-100 opacity-90 mt-1">
-        Ringkasan pendampingan pasien untuk hari ini.
-      </p>
-    </div>
-
-    {/* SVG Wave / Kurva di Bagian Bawah Header */}
-    <div className="absolute bottom-0 left-0 right-0 overflow-hidden leading-none pointer-events-none">
-      <svg
-        viewBox="0 0 500 40"
-        preserveAspectRatio="none"
-        className="w-full h-8 text-[#FDFBF7] fill-current"
-      >
-        <path d="M0,0 C150,35 350,35 500,0 L500,40 L0,40 Z"></path>
-      </svg>
-    </div>
-  </div>
-
-
-  {/* ================= KONTEN UTAMA (CARD CONTAINER) ================= */}
-  <div className="px-5 -mt-12 relative z-10 max-w-md mx-auto flex flex-col gap-6">
-
-    {/* --- Card 1: Profil Pasien & Ringkasan Perangkat --- */}
-    <section className={cardClass}>
-        <div className="flex">
-          <div className="min-w-0 flex-1 p-4">
-            <p className="text-xs text-slate-500">
-              Pasien Terdaftar
-            </p>
-
-            <p className="mt-1 text-2xl font-bold text-slate-800">
-              {patients.length}
-            </p>
-
-            <p className="mt-1 text-[11px] text-emerald-700">
-              {onlineCount} perangkat online
-            </p>
-          </div>
-
-          <div className="min-w-0 flex-1 p-4">
-            <p className="text-xs text-slate-500">
-              Tugas Hari Ini
-            </p>
-
-            <p className="mt-1 text-2xl font-bold text-slate-800">
-              {selectedDetail?.todayTasks.length ?? "-"}
-            </p>
-
-            <p className="mt-1 truncate text-[11px] text-slate-500">
-              untuk {selectedDetail?.patient.name ?? "…"}
-            </p>
-          </div>
+        {/* Sambutan */}
+        <div className="mt-5">
+          <h2 className="text-2xl font-bold">
+            Selamat Pagi, {nurseName.split(" ")[1] ?? nurseName}
+          </h2>
+          <p className="text-xs text-slate-100 opacity-90 mt-1">
+            Ringkasan pendampingan pasien untuk hari ini.
+          </p>
         </div>
-      </section>
 
-      {/* MISSED CALLS (PANGGILAN TERLEWAT) */}
-      {missedCalls.length > 0 && (
-        <section>
-          <div className="mb-2 flex items-center justify-between">
-            <h2 className="flex items-center gap-2 text-sm font-bold text-rose-800">
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75"></span>
-                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-rose-500"></span>
-              </span>
-              Panggilan Terlewat (Missed Call)
-            </h2>
-            <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-700">
-              {missedCalls.length} Panggilan
-            </span>
-          </div>
+        {/* SVG Wave / Kurva di Bagian Bawah Header */}
+        <div className="absolute bottom-0 left-0 right-0 overflow-hidden leading-none pointer-events-none">
+          <svg
+            viewBox="0 0 500 40"
+            preserveAspectRatio="none"
+            className="w-full h-8 text-[#FDFBF7] fill-current"
+          >
+            <path d="M0,0 C150,35 350,35 500,0 L500,40 L0,40 Z"></path>
+          </svg>
+        </div>
+      </div>
 
-          <div className="flex flex-col gap-3">
-            {missedCalls.map((h) => (
-              <div
-                key={h.id}
-                className="relative rounded-2xl border border-rose-200 bg-rose-50/70 p-4"
-              >
-                <div className="mb-2 flex items-center gap-3">
-                  <Avatar name={h.patient_name} />
-                  <div className="min-w-0">
-                    <h3 className="truncate text-sm font-bold text-slate-800">
-                      {h.patient_name}
-                    </h3>
-                    <p className="text-xs font-medium text-rose-600">
-                      Panggilan tidak terjawab (10 detik)
-                    </p>
-                  </div>
-                </div>
 
-                {h.patient_speech_transcript && (
-                  <div className="mb-3 rounded-xl border border-rose-100 bg-white p-2.5 text-xs text-slate-700">
-                    <p className="mb-0.5 text-[10px] font-bold tracking-wide text-rose-600">
-                      PESAN PASIEN
-                    </p>
-                    "{h.patient_speech_transcript}"
-                  </div>
-                )}
+      {/* ================= KONTEN UTAMA (CARD CONTAINER) ================= */}
+      <div className="px-5 -mt-12 relative z-10 max-w-md mx-auto flex flex-col gap-6">
 
-                <div className="flex gap-2">
-                  <button
-                    className={`flex-1 ${approveButtonClass}`}
-                    onClick={async () => {
-                      await api.resolveHelp(h.id);
-                      onReloadHelp();
-                    }}
-                  >
-                    ✓ Tandai Selesai
-                  </button>
-                  <button
-                    className={`flex-1 ${navyButtonClass}`}
-                    onClick={() => navigate(`/keluarga/${h.patient_id}`)}
-                  >
-                    Cek Pasien
-                  </button>
-                </div>
-              </div>
-            ))}
+        {/* --- Card 1: Profil Pasien & Ringkasan Perangkat --- */}
+        <section className={cardClass}>
+          <div className="flex">
+            <div className="min-w-0 flex-1 p-4">
+              <p className="text-xs text-slate-500">
+                Pasien Terdaftar
+              </p>
+
+              <p className="mt-1 text-2xl font-bold text-slate-800">
+                {patients.length}
+              </p>
+
+              <p className="mt-1 text-[11px] text-emerald-700">
+                {onlineCount} perangkat online
+              </p>
+            </div>
+
+            <div className="min-w-0 flex-1 p-4">
+              <p className="text-xs text-slate-500">
+                Tugas Hari Ini
+              </p>
+
+              <p className="mt-1 text-2xl font-bold text-slate-800">
+                {selectedDetail?.todayTasks.length ?? "-"}
+              </p>
+
+              <p className="mt-1 truncate text-[11px] text-slate-500">
+                untuk {selectedDetail?.patient.name ?? "…"}
+              </p>
+            </div>
           </div>
         </section>
-      )}
 
-      {/* ACTIVE HELP REQUESTS */}
-      {activeCalls.length > 0 && (
-        <section>
-          <h2 className="mb-2 text-sm font-bold text-slate-800">
-            Panggilan Menunggu Respons
-          </h2>
 
-    {/* --- PANGGILAN MENUNGGU RESPON (URGENT) --- */}
-    {activeCalls.length > 0 && (
-      <section className="space-y-3">
-        <h2 className="text-sm font-bold text-slate-800">
-          Panggilan Menunggu Respons
-        </h2>
+        {/* --- PANGGILAN MENUNGGU RESPON (URGENT) --- */}
+        {activeCalls.length > 0 && (
+          <section className="space-y-3">
+            <h2 className="text-sm font-bold text-slate-800">
+              Panggilan Menunggu Respons
+            </h2>
 
-        <div className="flex flex-col gap-3">
-          {activeCalls.map((h) => (
-            <div
-              key={h.id}
-              className="relative rounded-2xl border border-[#C65353] bg-[#C65353]/10 p-4 shadow-sm"
-            >
-              <span className="absolute right-4 top-4 rounded-full bg-[#C65353] px-2.5 py-1 text-[9px] font-bold tracking-wide text-white">
-                URGENT
-              </span>
+            <div className="flex flex-col gap-3">
+              {activeCalls.map((h) => (
+                <div
+                  key={h.id}
+                  className="relative rounded-2xl border border-[#C65353] bg-[#C65353]/10 p-4 shadow-sm"
+                >
+                  <span className="absolute right-4 top-4 rounded-full bg-[#C65353] px-2.5 py-1 text-[9px] font-bold tracking-wide text-white">
+                    URGENT
+                  </span>
 
-              <div className="mb-3 flex items-center gap-3 pr-16">
-                <Avatar name={h.patient_name} />
+                  <div className="mb-3 flex items-center gap-3 pr-16">
+                    <Avatar name={h.patient_name} />
 
-                <div className="min-w-0">
-                  <h3 className="truncate text-sm font-bold text-slate-800">
-                    {h.patient_name}
-                  </h3>
+                    <div className="min-w-0">
+                      <h3 className="truncate text-sm font-bold text-slate-800">
+                        {h.patient_name}
+                      </h3>
 
-                  <p className="text-xs text-slate-500">
-                    {h.room_number ?? ""}
-                  </p>
+                      <p className="text-xs text-slate-500">
+                        {h.room_number ?? ""}
+                      </p>
+                    </div>
+                  </div>
+
+                  {h.patient_speech_transcript && (
+                    <div className="mb-3 rounded-xl border border-rose-100 bg-white p-3">
+                      <p className="mb-1 text-[10px] font-bold tracking-wide text-[#C65353]">
+                        PESAN PASIEN
+                      </p>
+
+                      <p className="text-xs leading-relaxed text-slate-700">
+                        "{h.patient_speech_transcript}"
+                      </p>
+                    </div>
+                  )}
+
+                  <button
+                    className={`${buttonBaseClass} w-full bg-[#C65353] text-white hover:bg-[#ab4949]`}
+                    onClick={() => onOpenCall(h)}
+                  >
+                    Tangani
+                  </button>
                 </div>
-              </div>
+              ))}
+            </div>
+          </section>
+        )}
 
-              {h.patient_speech_transcript && (
-                <div className="mb-3 rounded-xl border border-rose-100 bg-white p-3">
-                  <p className="mb-1 text-[10px] font-bold tracking-wide text-[#C65353]">
-                    PESAN PASIEN
-                  </p>
 
-                  <p className="text-xs leading-relaxed text-slate-700">
-                    "{h.patient_speech_transcript}"
-                  </p>
+        {/* --- MENUNGGU PERSETUJUAN CAREGIVER --- */}
+        {pendingMulti.length > 0 && (
+          <section className={navyCardClass}>
+            <h2 className={headingClass}>
+              Menunggu Persetujuan Caregiver
+            </h2>
+
+            <p className="mb-3 mt-1 text-xs leading-relaxed text-slate-500">
+              Pasien {selectedDetail?.patient.name} melapor tugas selesai via Asisten AI.
+            </p>
+
+            <div className="flex flex-col gap-3">
+              {pendingMulti.map((t) => (
+                <div
+                  key={t.id}
+                  className="border-t border-slate-200 pt-3 first:border-0 first:pt-0"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-bold text-slate-800">
+                        {t.task_name}
+                      </h3>
+
+                      <p className="mt-1 text-[11px] text-slate-500">
+                        Jadwal: {hhmm(t.scheduled_time)}
+                      </p>
+                    </div>
+
+                    <span className="shrink-0 rounded-full bg-[#e3eaf3] px-2.5 py-1 text-[10px] font-semibold text-[#344966]">
+                      Laporan AI
+                    </span>
+                  </div>
+
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      className={`flex-1 ${approveButtonClass}`}
+                      onClick={() => handleConfirmMulti(t.id, true)}
+                    >
+                      ✓ Setujui Selesai
+                    </button>
+
+                    <button
+                      className={`flex-1 ${rejectButtonClass}`}
+                      onClick={() => handleConfirmMulti(t.id, false)}
+                    >
+                      ✕ Tolak
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+
+        {/* --- CARD 2: AKTIVITAS / JADWAL HARI INI --- */}
+        <section className={cardClass}>
+          <div className={headingBlueClass}>
+            <h2 className="text-sm font-bold text-white">
+              {selectedDetail?.todayTasks.length === 0
+                ? "Belum Ada Jadwal Hari Ini"
+                : "Hari ini Berjalan Sangat Baik"}
+            </h2>
+
+            <p className="text-xs opacity-90 mt-0.5  text-white">
+              {selectedDetail?.todayTasks.filter(t => t.status === 'CONFIRMED_BY_NURSE').length ?? 0} dari {selectedDetail?.todayTasks.length ?? 0} aktivitas selesai
+            </p>
+          </div>
+
+          <div className="p-4">
+            {/* Switcher Pasien jika ingin tetap bisa ganti-ganti */}
+            <div className="mb-3">
+              <PatientSwitcher
+                patients={patients}
+                selectedId={selectedId}
+                onChange={setSelectedId}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1">
+              {!selectedDetail && (
+                <p className="py-3 text-center text-xs text-slate-400">
+                  Memuat jadwal…
+                </p>
+              )}
+
+              {selectedDetail && selectedDetail.todayTasks.length === 0 && (
+                <div className="rounded-xl bg-slate-50 px-3 py-5 text-center text-xs text-slate-500">
+                  Tidak ada jadwal hari ini.
                 </div>
               )}
 
-              <button
-                className={`${buttonBaseClass} w-full bg-[#C65353] text-white hover:bg-[#ab4949]`}
-                onClick={() => onOpenCall(h)}
-              >
-                Tangani
-              </button>
+              {selectedDetail?.todayTasks.map((t) => (
+                <TimelineRow key={t.id} task={t} />
+              ))}
             </div>
-          ))}
-        </div>
-      </section>
-    )}
 
-
-    {/* --- MENUNGGU PERSETUJUAN CAREGIVER --- */}
-    {pendingMulti.length > 0 && (
-      <section className={navyCardClass}>
-        <h2 className={headingClass}>
-          Menunggu Persetujuan Caregiver
-        </h2>
-
-        <p className="mb-3 mt-1 text-xs leading-relaxed text-slate-500">
-          Pasien {selectedDetail?.patient.name} melapor tugas selesai via Asisten AI.
-        </p>
-
-        <div className="flex flex-col gap-3">
-          {pendingMulti.map((t) => (
-            <div
-              key={t.id}
-              className="border-t border-slate-200 pt-3 first:border-0 first:pt-0"
+            <button
+              className={`mt-4 w-full ${navyButtonClass ?? "bg-[#64849B] text-white py-2.5 rounded-xl text-xs font-semibold"}`}
+              onClick={() => navigate(`/keluarga/${selectedId}`)}
             >
-              <div className="flex items-center justify-between gap-2">
-                <div className="min-w-0">
-                  <h3 className="text-sm font-bold text-slate-800">
-                    {t.task_name}
-                  </h3>
+              Lihat Semua
+            </button>
+          </div>
+        </section>
 
-                  <p className="mt-1 text-[11px] text-slate-500">
-                    Jadwal: {hhmm(t.scheduled_time)}
-                  </p>
-                </div>
-
-                <span className="shrink-0 rounded-full bg-[#e3eaf3] px-2.5 py-1 text-[10px] font-semibold text-[#344966]">
-                  Laporan AI
-                </span>
-              </div>
-
-              <div className="mt-3 flex gap-2">
-                <button
-                  className={`flex-1 ${approveButtonClass}`}
-                  onClick={() => handleConfirmMulti(t.id, true)}
-                >
-                  ✓ Setujui Selesai
-                </button>
-
-                <button
-                  className={`flex-1 ${rejectButtonClass}`}
-                  onClick={() => handleConfirmMulti(t.id, false)}
-                >
-                  ✕ Tolak
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-    )}
-
-
-    {/* --- CARD 2: AKTIVITAS / JADWAL HARI INI --- */}
-    <section className={cardClass}>
-      <div className={headingBlueClass}>
-        <h2 className="text-sm font-bold text-white">
-          {selectedDetail?.todayTasks.length === 0
-            ? "Belum Ada Jadwal Hari Ini"
-            : "Hari ini Berjalan Sangat Baik"}
-        </h2>
-
-        <p className="text-xs opacity-90 mt-0.5  text-white">
-          {selectedDetail?.todayTasks.filter(t =>  t.status === 'CONFIRMED_BY_NURSE').length ?? 0} dari {selectedDetail?.todayTasks.length ?? 0} aktivitas selesai
-        </p>
       </div>
-
-      <div className="p-4">
-        {/* Switcher Pasien jika ingin tetap bisa ganti-ganti */}
-        <div className="mb-3">
-          <PatientSwitcher
-            patients={patients}
-            selectedId={selectedId}
-            onChange={setSelectedId}
-          />
-        </div>
-
-        <div className="flex flex-col gap-1">
-          {!selectedDetail && (
-            <p className="py-3 text-center text-xs text-slate-400">
-              Memuat jadwal…
-            </p>
-          )}
-
-          {selectedDetail && selectedDetail.todayTasks.length === 0 && (
-            <div className="rounded-xl bg-slate-50 px-3 py-5 text-center text-xs text-slate-500">
-              Tidak ada jadwal hari ini.
-            </div>
-          )}
-
-          {selectedDetail?.todayTasks.map((t) => (
-            <TimelineRow key={t.id} task={t} />
-          ))}
-        </div>
-
-        <button
-          className={`mt-4 w-full ${navyButtonClass ?? "bg-[#64849B] text-white py-2.5 rounded-xl text-xs font-semibold"}`}
-          onClick={() => navigate(`/keluarga/${selectedId}`)}
-        >
-          Lihat Semua
-        </button>
-      </div>
-    </section>
-
-  </div>
-</div>
+    </div>
   );
 }
 
