@@ -324,15 +324,15 @@ export function DetailKeluargaPage() {
 
             {/* Edit Jadwal Keluarga */}
             <div className={`p-4 flex flex-col gap-4 ${cardClass}`}>
-              <div className="mb-1 flex items-start justify-between gap-2.5">
+              <div className="mb-1 flex items-start justify-between">
                 <div>
                   <div className="text-[15px] font-bold text-ink">Edit Jadwal Keluarga</div>
                   <div className="text-xs text-mute">Buat, ubah, dan hapus data</div>
                 </div>
-                <div className="inline-flex rounded-full bg-surface-sunken">
+                <div className="inline-flex rounded-lg bg-[#A8C1D1]/10 p-1">
                   <button
                     type="button"
-                    className={`cursor-pointer rounded-full px-3 py-1.5 text-xs font-semibold transition ${scheduleFilter === "harian" ? "bg-navy font-bold text-white shadow-xs" : "text-mute hover:text-ink"
+                    className={`cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold transition ${scheduleFilter === "harian" ? "bg-navy font-bold text-white shadow-xs" : "text-mute hover:text-ink"
                       }`}
                     onClick={() => setScheduleFilter("harian")}
                   >
@@ -340,7 +340,7 @@ export function DetailKeluargaPage() {
                   </button>
                   <button
                     type="button"
-                    className={`cursor-pointer rounded-full px-3 py-1.5 text-xs font-semibold transition ${scheduleFilter === "berulang" ? "bg-navy font-bold text-white shadow-xs" : "text-mute hover:text-ink"
+                    className={`cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold transition ${scheduleFilter === "berulang" ? "bg-navy font-bold text-white shadow-xs" : "text-mute hover:text-ink"
                       }`}
                     onClick={() => setScheduleFilter("berulang")}
                   >
@@ -357,7 +357,7 @@ export function DetailKeluargaPage() {
               {scheduleTasks.map((t) => (
                 <div
                   key={t.id}
-                  className={`mb-2 flex items-center justify-between rounded-xl bg-linear-to-r from-white to-[#A8C1D1]/10 border border-[#A8C1D1] px-3.5 py-3 text-[13px] ${!t.is_active ? "opacity-60" : ""
+                  className={` flex items-center justify-between rounded-xl bg-linear-to-r from-white to-[#A8C1D1]/10 border border-[#A8C1D1] px-3.5 py-3 text-[13px] ${!t.is_active ? "opacity-60" : ""
                     }`}
                 >
                   <div
@@ -377,25 +377,19 @@ export function DetailKeluargaPage() {
                   <div className="flex items-center gap-1.5">
                     <button
                       type="button"
-                      className="cursor-pointer rounded-md border border-line bg-navy-soft px-2 py-1 text-[11px] font-bold text-navy transition hover:opacity-90 active:scale-95"
+                      className="cursor-pointer rounded-md border-[#A8C1D1]/10 bg-[#A8C1D1]/10 px-2 py-1 text-[11px] font-bold text-[#426783] transition hover:opacity-90 active:scale-95"
                       onClick={() => setTaskSheet({ open: true, existing: t })}
                     >
                       Edit
                     </button>
+                    
                     <button
                       type="button"
-                      className="cursor-pointer rounded-md border border-line bg-surface px-2 py-1 text-[11px] font-bold text-ink transition hover:opacity-90 active:scale-95"
-                      onClick={() => setStatusSheet({ open: true, task: t })}
-                    >
-                      Status
-                    </button>
-                    <button
-                      type="button"
-                      className="cursor-pointer p-1 text-xs text-mute transition hover:text-alert"
+                      className="cursor-pointer rounded-md border-[#C65353]/10 bg-[#C65353]/10 px-2 py-1 text-[11px] font-bold text-[#C65353] transition hover:opacity-90 active:scale-95"
                       onClick={() => setDeleteTask(t)}
                       aria-label="Hapus"
                     >
-                      🗑
+                      Hapus
                     </button>
                   </div>
                 </div>
