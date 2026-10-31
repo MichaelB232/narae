@@ -17,6 +17,10 @@ const DAY_LABELS_SHORT: Record<number, string> = {
   1: "Sen", 2: "Sel", 3: "Rab", 4: "Kam", 5: "Jum", 6: "Sab", 7: "Min",
 };
 
+
+const navyCardClass =
+  "rounded-2xl border border-[#dce3ed] bg-[#f3f6fa] p-4 flex flex-col gap-4";
+
 const cardClass =
   "rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden mb-3.5";
 
@@ -319,13 +323,13 @@ export function DetailKeluargaPage() {
             </div>
 
             {/* Edit Jadwal Keluarga */}
-            <div className="mb-3.5">
+            <div className={`p-4 flex flex-col gap-4 ${cardClass}`}>
               <div className="mb-1 flex items-start justify-between gap-2.5">
                 <div>
                   <div className="text-[15px] font-bold text-ink">Edit Jadwal Keluarga</div>
                   <div className="text-xs text-mute">Buat, ubah, dan hapus data</div>
                 </div>
-                <div className="inline-flex rounded-full bg-surface-sunken p-[3px]">
+                <div className="inline-flex rounded-full bg-surface-sunken">
                   <button
                     type="button"
                     className={`cursor-pointer rounded-full px-3 py-1.5 text-xs font-semibold transition ${scheduleFilter === "harian" ? "bg-navy font-bold text-white shadow-xs" : "text-mute hover:text-ink"
@@ -353,7 +357,7 @@ export function DetailKeluargaPage() {
               {scheduleTasks.map((t) => (
                 <div
                   key={t.id}
-                  className={`mb-2 flex items-center justify-between rounded-xl bg-surface-sunken px-3.5 py-3 text-[13px] ${!t.is_active ? "opacity-60" : ""
+                  className={`mb-2 flex items-center justify-between rounded-xl bg-linear-to-r from-white to-[#A8C1D1]/10 border border-[#A8C1D1] px-3.5 py-3 text-[13px] ${!t.is_active ? "opacity-60" : ""
                     }`}
                 >
                   <div
@@ -410,7 +414,7 @@ export function DetailKeluargaPage() {
 
         {/* TAB INVENTORI */}
         {tab === "inventori" && (
-          <div className="mb-3.5">
+          <div className="">
             <div className="text-[15px] font-bold text-ink">Daftar Inventori Keluarga</div>
             <div className="mb-2.5 text-xs text-mute">Koordinasi barang milik keluarga</div>
 
