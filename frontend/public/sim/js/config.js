@@ -5,8 +5,9 @@
 const CONFIG={
  help:{sendMs:1200,ackMs:1800},
  speak:true,
+ hints:{bantuan:"tekan lalu bicara ke NARAE",jadwal:"tekan untuk mendengar jadwal hari ini",speaker:"klik untuk tes suara",led:"klik untuk uji warna lampu"},
  bindings:{jadwal:"showSchedule",bantuan:"startHelp",speaker:"testSpeaker",led:"cycleLed"},
- storage:{adapter:"http",url:"http://localhost:4000/api"},
+ storage:{adapter:"http",url:new URLSearchParams(location.search).get("api")||"http://localhost:4000/api"},
  deviceId:"WB-001",
  patientId:null,
  apiDeviceId:null

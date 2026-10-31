@@ -5,6 +5,7 @@ import { BerandaPage } from "./pages/BerandaPage";
 import { KeluargaPage } from "./pages/KeluargaPage";
 import { DetailKeluargaPage } from "./pages/DetailKeluargaPage";
 import { PengaturanPage } from "./pages/PengaturanPage";
+import { SplitLayout } from "./components/SplitLayout";
 
 function Protected({ children }: { children: JSX.Element }) {
   const { user } = useAuth();
@@ -18,10 +19,12 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/" element={<Protected><BerandaPage /></Protected>} />
-          <Route path="/keluarga" element={<Protected><KeluargaPage /></Protected>} />
-          <Route path="/keluarga/:id" element={<Protected><DetailKeluargaPage /></Protected>} />
-          <Route path="/pengaturan" element={<Protected><PengaturanPage /></Protected>} />
+          <Route element={<Protected><SplitLayout /></Protected>}>
+            <Route path="/" element={<BerandaPage />} />
+            <Route path="/keluarga" element={<KeluargaPage />} />
+            <Route path="/keluarga/:id" element={<DetailKeluargaPage />} />
+            <Route path="/pengaturan" element={<PengaturanPage />} />
+          </Route>
         </Routes>
       </BrowserRouter>
     </AuthProvider>
