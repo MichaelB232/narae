@@ -8,8 +8,6 @@ import { userRepository } from "../repositories/user.repository.js";
 import { formatDate } from "../utils/date.js";
 
 
-
-
 const dataProvider: AgentDataProvider = {
   async getPatientTasks(patientId: number) {
     const tasks = await patientRepository.findActiveTasks(patientId);
