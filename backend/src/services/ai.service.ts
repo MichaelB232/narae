@@ -19,12 +19,6 @@ const dataProvider: AgentDataProvider = {
     }));
   },
   async getBelongingsSummary(patientId: number) {
-    const belongings = await patientRepository.findBelongings(patientId);
-    return belongings.map((b) => ({
-      item_name: b.item_name
-    }));
-  },
-  async getBelongingsSummary(patientId: number) {
     const belongings = await patientRepository.findBelongingsSummary(patientId);
     return belongings.map((b) => ({
       item_name: b.item_name,
