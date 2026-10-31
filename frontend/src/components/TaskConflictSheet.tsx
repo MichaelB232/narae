@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { BottomSheet } from "./BottomSheet";
-import { hhmm, isTimeOverlap, toMinutes } from "../utils";
+import { isTimeOverlap } from "../utils";
 import type { TaskItem } from "../types";
 
 export interface ConflictingTaskItem {
@@ -15,13 +15,11 @@ export interface ConflictingTaskItem {
 interface Props {
   open: boolean;
   onClose: () => void;
-  // Aktivitas yang sedang dibuat/diedit (Aktivitas 1)
   currentTask: {
     task_name: string;
     scheduled_time: string;
     duration_minutes: number;
   };
-  // Aktivitas yang bertabrakan di database (Aktivitas 2)
   conflictingTask: TaskItem | null;
   onResolve: (action: {
     type: "proceed";
@@ -39,10 +37,8 @@ export function TaskConflictSheet({
   conflictingTask,
   onResolve,
 }: Props) {
-  // Pilihan kartu mana yang di-select (1 = currentTask, 2 = conflictingTask)
   const [selectedSide, setSelectedSide] = useState<1 | 2>(1);
 
-  // State waktu yang bisa diedit langsung
   const [time1, setTime1] = useState(currentTask.scheduled_time.slice(0, 5));
   const [dur1, setDur1] = useState(currentTask.duration_minutes);
 
@@ -50,7 +46,6 @@ export function TaskConflictSheet({
   const [dur2, setDur2] = useState(15);
   const [isConflictingActive, setIsConflictingActive] = useState(true);
 
-  // Mode inline edit waktu
   const [isEditingTime, setIsEditingTime] = useState(false);
 
   useEffect(() => {
@@ -67,15 +62,12 @@ export function TaskConflictSheet({
 
   if (!open || !conflictingTask) return null;
 
-  // Cek apakah masih bertabrakan
-  // Jika conflictingTask dinonaktifkan (isActive = false), maka tidak bertabrakan lagi
   const stillOverlaps = isConflictingActive
     ? isTimeOverlap(time1, dur1, time2, dur2)
     : false;
 
   const isResolved = !stillOverlaps;
 
-  // Handler Hapus (untuk Aktivitas 2 jika ONE_TIME)
   function handleDeleteConflicting() {
     onResolve({
       type: "proceed",
@@ -84,7 +76,6 @@ export function TaskConflictSheet({
     });
   }
 
-  // Handler Simpan jika sudah disesuaikan
   function handleSaveAdjusted() {
     onResolve({
       type: "proceed",
@@ -99,111 +90,95 @@ export function TaskConflictSheet({
 
   return (
     <BottomSheet open={open} onClose={onClose}>
-      <h2>{isResolved ? "Jadwal Telah Disesuaikan" : "Jadwal Bertabrakan"}</h2>
-      <p className="sheet-sub">
+      <h2 className="m-0 mb-0.5 text-lg font-bold text-ink">
+        {isResolved ? "Jadwal Telah Disesuaikan" : "Jadwal Bertabrakan"}
+      </h2>
+      <p className="m-0 mb-4 text-[12.5px] text-mute">
         {isResolved
           ? "Jadwal sudah tidak bertabrakan"
           : "Edit atau sesuaikan salah satu kegiatan untuk melanjutkan"}
       </p>
 
-      {/* Grid 2 Kartu Berdampingan (Sesuai Gambar Desain) */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
+      {/* Grid 2 Kartu Berdampingan */}
+      <div className="mb-4 grid grid-cols-2 gap-2.5">
         {/* KARTU 1 (Aktivitas Baru yang sedang dibuat) */}
         <div
           onClick={() => { setSelectedSide(1); setIsEditingTime(false); }}
-          style={{
-            border: `2px solid ${selectedSide === 1 ? "#3e627c" : "var(--line)"}`,
-            borderRadius: 14,
-            padding: 12,
-            background: selectedSide === 1 ? "#edf3f6" : "#fff",
-            cursor: "pointer",
-            transition: "all 0.2s ease",
-            boxShadow: selectedSide === 1 ? "0 2px 8px rgba(62, 98, 124, 0.15)" : "none",
-          }}
+          className={`cursor-pointer rounded-2xl p-3 transition-all duration-200 border-2 ${
+            selectedSide === 1
+              ? "border-navy bg-navy-soft shadow-[0_2px_8px_rgba(62,98,124,0.15)]"
+              : "border-line bg-surface"
+          }`}
         >
-          <div style={{ fontSize: 12, fontWeight: 700, color: "#3e627c", marginBottom: 2 }}>
+          <div className="mb-0.5 text-xs font-bold text-navy">
             Aktivitas Baru
           </div>
-          <div style={{ fontWeight: 700, fontSize: 14, color: "var(--text)", marginBottom: 8, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          <div className="mb-2 truncate text-sm font-bold text-ink">
             {currentTask.task_name}
           </div>
 
-          <div style={{ fontSize: 12, fontWeight: 700, color: "#22262b" }}>Jam Mulai</div>
-          <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 6 }}>{time1} WIB</div>
+          <div className="text-xs font-bold text-ink">Jam Mulai</div>
+          <div className="mb-1.5 text-[13px] text-mute">{time1} WIB</div>
 
-          <div style={{ fontSize: 12, fontWeight: 700, color: "#22262b" }}>Durasi</div>
-          <div style={{ fontSize: 13, color: "#6b7280" }}>{dur1} Menit</div>
+          <div className="text-xs font-bold text-ink">Durasi</div>
+          <div className="text-[13px] text-mute">{dur1} Menit</div>
         </div>
 
         {/* KARTU 2 (Aktivitas Eksisting yang Bertabrakan) */}
         <div
           onClick={() => { setSelectedSide(2); setIsEditingTime(false); }}
-          style={{
-            border: `2px solid ${selectedSide === 2 ? "#3e627c" : "var(--line)"}`,
-            borderRadius: 14,
-            padding: 12,
-            background: selectedSide === 2 ? "#edf3f6" : "#fff",
-            cursor: "pointer",
-            transition: "all 0.2s ease",
-            opacity: isConflictingActive ? 1 : 0.6,
-            boxShadow: selectedSide === 2 ? "0 2px 8px rgba(62, 98, 124, 0.15)" : "none",
-          }}
+          className={`cursor-pointer rounded-2xl p-3 transition-all duration-200 border-2 ${
+            selectedSide === 2
+              ? "border-navy bg-navy-soft shadow-[0_2px_8px_rgba(62,98,124,0.15)]"
+              : "border-line bg-surface"
+          } ${isConflictingActive ? "opacity-100" : "opacity-60"}`}
         >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 2 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: "#6b7280" }}>
+          <div className="mb-0.5 flex items-center justify-between">
+            <span className="text-xs font-bold text-mute">
               {conflictingTask.type === "RECURRING" ? "Berulang" : "Appointment"}
             </span>
             {!isConflictingActive && (
-              <span className="pill" style={{ fontSize: 9, background: "var(--rose-soft)", color: "var(--rose)" }}>
+              <span className="rounded-full bg-alert-soft px-1.5 py-0.5 text-[9px] font-bold text-alert">
                 Nonaktif
               </span>
             )}
           </div>
-          <div style={{ fontWeight: 700, fontSize: 14, color: "var(--text)", marginBottom: 8, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          <div className="mb-2 truncate text-sm font-bold text-ink">
             {conflictingTask.task_name}
           </div>
 
-          <div style={{ fontSize: 12, fontWeight: 700, color: "#22262b" }}>Jam Mulai</div>
-          <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 6 }}>{time2} WIB</div>
+          <div className="text-xs font-bold text-ink">Jam Mulai</div>
+          <div className="mb-1.5 text-[13px] text-mute">{time2} WIB</div>
 
-          <div style={{ fontSize: 12, fontWeight: 700, color: "#22262b" }}>Durasi</div>
-          <div style={{ fontSize: 13, color: "#6b7280" }}>{dur2} Menit</div>
+          <div className="text-xs font-bold text-ink">Durasi</div>
+          <div className="text-[13px] text-mute">{dur2} Menit</div>
         </div>
       </div>
 
       {/* Panel Edit Waktu atau Aksi Sesuai Kartu yang Dipilih */}
-      <div style={{ background: "var(--surface-sunken)", padding: "10px 14px", borderRadius: 12, marginBottom: 16 }}>
-        <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6 }}>
+      <div className="mb-4 rounded-xl bg-surface-sunken px-3.5 py-2.5">
+        <div className="mb-1.5 text-xs font-bold text-ink">
           Pilihan untuk: {selectedSide === 1 ? currentTask.task_name : conflictingTask.task_name}
         </div>
 
-        {/* Jika Kartu 2 (Recurring) dipilih: bisa toggle switch nonaktifkan */}
         {selectedSide === 2 && conflictingTask.type === "RECURRING" && (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "6px 0" }}>
-            <span style={{ fontSize: 12 }}>Status Tugas Berulang:</span>
+          <div className="my-1.5 flex items-center justify-between">
+            <span className="text-xs text-ink">Status Tugas Berulang:</span>
             <button
               type="button"
               onClick={() => setIsConflictingActive(!isConflictingActive)}
-              style={{
-                padding: "4px 10px",
-                borderRadius: 999,
-                fontSize: 11,
-                fontWeight: 700,
-                background: isConflictingActive ? "var(--sage)" : "var(--rose)",
-                color: "#fff",
-                border: "none",
-                cursor: "pointer",
-              }}
+              className={`cursor-pointer rounded-full px-2.5 py-1 text-[11px] font-bold text-white transition active:scale-95 ${
+                isConflictingActive ? "bg-sage" : "bg-alert"
+              }`}
             >
               {isConflictingActive ? "Aktif" : "Dinonaktifkan"}
             </button>
           </div>
         )}
 
-        {/* Form Edit Jam Mulai Inline jika mode Edit aktif */}
         {isEditingTime ? (
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
-            <label style={{ fontSize: 12 }}>Ubah Jam:</label>
+          <div className="mt-1.5 flex items-center gap-2">
+            <label className="text-xs font-bold text-ink">Ubah Jam:</label>
             <input
               type="time"
               value={selectedSide === 1 ? time1 : time2}
@@ -211,11 +186,11 @@ export function TaskConflictSheet({
                 if (selectedSide === 1) setTime1(e.target.value);
                 else setTime2(e.target.value);
               }}
-              style={{ padding: "4px 8px", borderRadius: 6, border: "1px solid var(--line)" }}
+              className="rounded-md border border-line bg-surface px-2 py-1 text-xs text-ink focus:border-navy focus:outline-none"
             />
           </div>
         ) : (
-          <div style={{ fontSize: 12, color: "#6b7280" }}>
+          <div className="text-xs text-mute">
             Tekan tombol <b>Edit</b> di bawah untuk mengubah jam aktivitas ini.
           </div>
         )}
@@ -223,73 +198,59 @@ export function TaskConflictSheet({
 
       {/* Notice apakah masih bertabrakan */}
       {stillOverlaps && (
-        <div
-          style={{
-            background: "var(--rose-soft)",
-            color: "var(--rose)",
-            padding: "8px 12px",
-            borderRadius: 8,
-            fontSize: 12,
-            marginBottom: 14,
-            border: "1px solid rgba(198, 83, 83, 0.2)",
-          }}
-        >
+        <div className="mb-3.5 rounded-lg border border-alert/20 bg-alert-soft p-2.5 text-xs text-alert">
           ⚠️ Waktu masih bertabrakan ({time1} durasi {dur1}m vs {time2} durasi {dur2}m). Silakan geser jam atau nonaktifkan tugas.
         </div>
       )}
 
-      {/* TOMBOL AKSI (Sesuai 2 Status pada Gambar) */}
+      {/* TOMBOL AKSI */}
       {isResolved ? (
-        // Gambar Kanan: Jadwal Telah Disesuaikan -> [Simpan Aktivitas] & [Kembali]
         <div>
           <button
-            className="btn sage"
+            type="button"
+            className="w-full cursor-pointer rounded-full bg-sage py-3.25 px-4 text-center text-sm font-bold text-white transition hover:opacity-90 active:scale-[0.99]"
             onClick={handleSaveAdjusted}
-            style={{ width: "100%", padding: 13, fontSize: 14, fontWeight: 700 }}
           >
             Simpan Aktivitas
           </button>
-          <div style={{ marginTop: 8 }}>
+          <div className="mt-2">
             <button
-              className="btn ghost"
+              type="button"
+              className="w-full cursor-pointer rounded-full bg-surface-sunken py-3 px-4 text-center text-sm font-bold text-ink transition hover:opacity-90 active:scale-[0.99]"
               onClick={onClose}
-              style={{ width: "100%", padding: 12, fontSize: 14 }}
             >
               Kembali
             </button>
           </div>
         </div>
       ) : (
-        // Gambar Kiri: Jadwal Bertabrakan -> [Edit] & [Hapus] + [Kembali]
         <div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 8 }}>
+          <div className="mb-2 grid grid-cols-2 gap-2.5">
             <button
-              className="btn navy"
+              type="button"
+              className="cursor-pointer rounded-full bg-navy py-3 px-4 text-center text-[13px] font-bold text-white transition hover:opacity-90 active:scale-[0.99]"
               onClick={() => setIsEditingTime(true)}
-              style={{ padding: 12, fontSize: 13, fontWeight: 700 }}
             >
               Edit
             </button>
             <button
-              className="btn rose"
+              type="button"
               disabled={selectedSide === 1 || conflictingTask.type === "RECURRING"}
               title={selectedSide === 1 ? "Pilih aktivitas 2 untuk menghapus" : conflictingTask.type === "RECURRING" ? "Tugas berulang gunakan tombol nonaktifkan" : "Hapus tugas appointment"}
               onClick={handleDeleteConflicting}
-              style={{
-                padding: 12,
-                fontSize: 13,
-                fontWeight: 700,
-                opacity: selectedSide === 1 || conflictingTask.type === "RECURRING" ? 0.45 : 1,
-                cursor: selectedSide === 1 || conflictingTask.type === "RECURRING" ? "not-allowed" : "pointer",
-              }}
+              className={`rounded-full py-3 px-4 text-center text-[13px] font-bold text-white transition ${
+                selectedSide === 1 || conflictingTask.type === "RECURRING"
+                  ? "cursor-not-allowed bg-alert/45 opacity-50"
+                  : "cursor-pointer bg-alert hover:opacity-90 active:scale-[0.99]"
+              }`}
             >
               Hapus
             </button>
           </div>
           <button
-            className="btn ghost"
+            type="button"
+            className="w-full cursor-pointer rounded-full bg-surface-sunken py-3 px-4 text-center text-sm font-bold text-ink transition hover:opacity-90 active:scale-[0.99]"
             onClick={onClose}
-            style={{ width: "100%", padding: 12, fontSize: 14 }}
           >
             Kembali
           </button>

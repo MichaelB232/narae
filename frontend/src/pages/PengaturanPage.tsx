@@ -3,7 +3,7 @@ import { useAuth } from "../auth";
 import { PhoneLayout } from "../components/PhoneLayout";
 import { Avatar } from "../components/Avatar";
 
-// Belum ada desain Figma untuk halaman ini — dibuat minimal, mengikuti tema yang sama.
+// Halaman Pengaturan dengan Tailwind utility classes
 export function PengaturanPage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -11,24 +11,30 @@ export function PengaturanPage() {
 
   return (
     <PhoneLayout>
-      <div className="block" style={{ paddingTop: 6 }}>
-        <h1 style={{ fontSize: 20, marginBottom: 2 }}>Pengaturan</h1>
-        <p className="mut">Akun dan preferensi</p>
+      <div className="mb-3.5 pt-1.5">
+        <h1 className="mb-0.5 text-xl font-bold text-ink">Pengaturan</h1>
+        <p className="m-0 text-[13px] text-mute">Akun dan preferensi</p>
       </div>
 
-      <div className="card block">
-        <div className="patient-mini">
+      <div className="mb-3.5 rounded-2xl border border-line bg-surface p-4">
+        <div className="flex items-center gap-3">
           <Avatar name={user.full_name} />
           <div>
-            <div className="name">{user.full_name}</div>
-            <div className="mut">@{user.username} · {user.role === "nurse" ? "Perawat" : "Keluarga"}</div>
+            <div className="text-[15px] font-bold text-ink">{user.full_name}</div>
+            <div className="text-[13px] text-mute">
+              @{user.username} · {user.role === "nurse" ? "Perawat" : "Keluarga"}
+            </div>
           </div>
         </div>
       </div>
 
       <button
-        className="btn outline-rose block"
-        onClick={() => { logout(); navigate("/login"); }}
+        type="button"
+        className="w-full cursor-pointer rounded-full border border-alert bg-transparent py-3 px-4 text-center text-sm font-bold text-alert transition hover:bg-alert-soft active:scale-[0.99]"
+        onClick={() => {
+          logout();
+          navigate("/login");
+        }}
       >
         Keluar
       </button>

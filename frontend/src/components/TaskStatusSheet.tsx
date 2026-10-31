@@ -61,32 +61,24 @@ export function TaskStatusSheet({
 
   return (
     <BottomSheet open={open} onClose={onClose}>
-      <h2>Update Status Aktivitas</h2>
-      <p className="sheet-sub">Ubah status aktivitas tanpa mengubah jadwal suara</p>
+      <h2 className="m-0 mb-0.5 text-lg font-bold text-ink">Update Status Aktivitas</h2>
+      <p className="m-0 mb-4 text-[12.5px] text-mute">Ubah status aktivitas tanpa mengubah jadwal suara</p>
 
       {/* Task Summary Header */}
-      <div
-        style={{
-          background: "var(--surface-sunken)",
-          padding: "12px 14px",
-          borderRadius: 12,
-          marginBottom: 16,
-        }}
-      >
-        <div style={{ fontWeight: 700, fontSize: 15, color: "var(--text)" }}>
-          {task.task_name}
-        </div>
-        <div className="mut" style={{ fontSize: 12.5, marginTop: 2 }}>
+      <div className="mb-4 rounded-xl bg-surface-sunken p-3.5">
+        <div className="text-[15px] font-bold text-ink">{task.task_name}</div>
+        <div className="mt-0.5 text-[12.5px] text-mute">
           Jadwal: {hhmm(task.scheduled_time)} WIB ({task.duration_minutes} Menit)
         </div>
       </div>
 
       {/* Dropdown Status Selesai / Belum Selesai */}
-      <div className="field">
-        <label>Status</label>
+      <div className="mb-3.5">
+        <label className="mb-1.5 block text-[12.5px] font-bold text-ink">Status</label>
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value as SimpleStatus)}
+          className="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-[13.5px] text-ink focus:border-navy focus:outline-none"
         >
           <option value="BELUM_SELESAI">Belum Selesai</option>
           <option value="SELESAI">Selesai</option>
@@ -94,32 +86,33 @@ export function TaskStatusSheet({
       </div>
 
       {/* Alasan Pengubahan (Opsional) */}
-      <div className="field">
-        <label>Alasan Pengubahan (Opsional)</label>
+      <div className="mb-3.5">
+        <label className="mb-1.5 block text-[12.5px] font-bold text-ink">Alasan Pengubahan (Opsional)</label>
         <textarea
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           placeholder="Contoh: Sudah dilakukan tepat waktu, tapi perawat baru sempat update status"
           rows={3}
+          className="w-full resize-y rounded-lg border border-line bg-surface px-3 py-2.5 text-[13.5px] text-ink focus:border-navy focus:outline-none"
         />
       </div>
 
       {/* Actions */}
-      <div style={{ marginTop: 20 }}>
+      <div className="mt-5">
         <button
-          className="btn navy"
+          type="button"
+          className="w-full cursor-pointer rounded-full bg-navy py-3.25 px-4 text-center text-sm font-bold text-white transition hover:opacity-90 active:scale-[0.99] disabled:opacity-50"
           disabled={saving}
           onClick={handleSaveStatus}
-          style={{ width: "100%", padding: 13, fontSize: 14, fontWeight: 700 }}
         >
           {saving ? "Menyimpan…" : "Simpan Status"}
         </button>
       </div>
-      <div style={{ marginTop: 8 }}>
+      <div className="mt-2">
         <button
-          className="btn ghost"
+          type="button"
+          className="w-full cursor-pointer rounded-full bg-surface-sunken py-3 px-4 text-center text-sm font-bold text-ink transition hover:opacity-90 active:scale-[0.99]"
           onClick={onClose}
-          style={{ width: "100%", padding: 12, fontSize: 14 }}
         >
           Batal
         </button>

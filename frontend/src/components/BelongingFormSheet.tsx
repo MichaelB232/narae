@@ -40,27 +40,55 @@ export function BelongingFormSheet({ open, onClose, onSaved, patientId, existing
 
   return (
     <BottomSheet open={open} onClose={onClose}>
-      <h2>{isEdit ? "Edit Barang" : "Tambah Barang"}</h2>
-      <p className="sheet-sub">{isEdit ? "Edit barang milik anggota keluarga" : "Tambahkan barang milik anggota keluarga"}</p>
+      <h2 className="m-0 mb-0.5 text-lg font-bold text-ink">{isEdit ? "Edit Barang" : "Tambah Barang"}</h2>
+      <p className="m-0 mb-4 text-[12.5px] text-mute">{isEdit ? "Edit barang milik anggota keluarga" : "Tambahkan barang milik anggota keluarga"}</p>
 
-      <div className="field">
-        <label>Nama Barang</label>
-        <input value={itemName} onChange={(e) => setItemName(e.target.value)} placeholder="Ex. Balon D'Or Trophy" />
+      <div className="mb-3.5">
+        <label className="mb-1.5 block text-[12.5px] font-bold text-ink">Nama Barang</label>
+        <input
+          value={itemName}
+          onChange={(e) => setItemName(e.target.value)}
+          placeholder="Ex. Kacamata Baca"
+          className="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-[13.5px] text-ink focus:border-navy focus:outline-none"
+        />
       </div>
-      <div className="field">
-        <label>Lokasi Default</label>
-        <input value={defaultLocation} onChange={(e) => setDefaultLocation(e.target.value)} placeholder="*Dimana barang biasanya diletakkan" />
+      <div className="mb-3.5">
+        <label className="mb-1.5 block text-[12.5px] font-bold text-ink">Lokasi Default</label>
+        <input
+          value={defaultLocation}
+          onChange={(e) => setDefaultLocation(e.target.value)}
+          placeholder="*Dimana barang biasanya diletakkan"
+          className="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-[13.5px] text-ink focus:border-navy focus:outline-none"
+        />
       </div>
-      <div className="field">
-        <label>Lokasi Terakhir</label>
-        <input value={lastLocation} onChange={(e) => setLastLocation(e.target.value)} placeholder="Rumah Harry Kane" />
+      <div className="mb-3.5">
+        <label className="mb-1.5 block text-[12.5px] font-bold text-ink">Lokasi Terakhir</label>
+        <input
+          value={lastLocation}
+          onChange={(e) => setLastLocation(e.target.value)}
+          placeholder="Ex. Meja samping tempat tidur"
+          className="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-[13.5px] text-ink focus:border-navy focus:outline-none"
+        />
       </div>
 
-      <button className={`btn ${isEdit ? "navy" : "sage"}`} disabled={saving || !itemName} onClick={submit}>
+      <button
+        type="button"
+        className={`w-full cursor-pointer rounded-full py-3.25 px-4 text-center text-sm font-bold text-white transition hover:opacity-90 active:scale-[0.99] disabled:opacity-50 ${
+          isEdit ? "bg-navy" : "bg-sage"
+        }`}
+        disabled={saving || !itemName.trim()}
+        onClick={submit}
+      >
         {saving ? "Menyimpan…" : isEdit ? "Simpan" : "Tambah"}
       </button>
-      <div style={{ marginTop: 8 }}>
-        <button className="btn ghost" onClick={onClose}>Batal</button>
+      <div className="mt-2">
+        <button
+          type="button"
+          className="w-full cursor-pointer rounded-full bg-surface-sunken py-3 px-4 text-center text-sm font-bold text-ink transition hover:opacity-90 active:scale-[0.99]"
+          onClick={onClose}
+        >
+          Batal
+        </button>
       </div>
     </BottomSheet>
   );

@@ -1,6 +1,5 @@
 import { BottomSheet } from "./BottomSheet";
 import { Avatar } from "./Avatar";
-import { calcAge } from "../utils";
 import type { HelpRequestItem } from "../types";
 
 // Pesan panggilan SENGAJA statis — cuma nama pasien yang dinamis, sisanya template tetap
@@ -23,42 +22,56 @@ export function HelpRequestSheet({
   if (!item) return null;
   return (
     <BottomSheet open onClose={onLater}>
-      <h2 style={{ color: "var(--rose)" }}>Panggilan Menunggu Respons</h2>
-      <p className="sheet-sub">Respons dan tindak lanjuti panggilan pasien.</p>
+      <h2 className="m-0 mb-0.5 text-lg font-bold text-alert">Panggilan Menunggu Respons</h2>
+      <p className="m-0 mb-4 text-[12.5px] text-mute">Respons dan tindak lanjuti panggilan pasien.</p>
 
-      <div className="card" style={{ position: "relative" }}>
-        <span className="pill urgent" style={{ position: "absolute", top: 14, right: 14 }}>URGENT</span>
-        <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--rose)", marginBottom: 10, paddingRight: 70 }}>
+      <div className="relative rounded-2xl border border-line bg-surface p-4">
+        <span className="absolute top-3.5 right-3.5 rounded-full bg-alert px-2 py-0.5 text-[10px] font-bold text-white">
+          URGENT
+        </span>
+        <div className="mb-2.5 pr-[70px] text-[12.5px] font-bold text-alert">
           {callMessage(item.patient_name)}
         </div>
-        <div className="patient-mini">
+        <div className="flex items-center gap-3">
           <Avatar name={item.patient_name} />
           <div>
-            <div className="name">{item.patient_name}</div>
-            <div className="age">
+            <div className="text-[15px] font-bold text-ink">{item.patient_name}</div>
+            <div className="text-xs text-mute">
               {patientAge ? `${patientAge} Tahun` : ""}{item.room_number ? ` • ${item.room_number}` : ""}
             </div>
           </div>
         </div>
 
         {item.patient_speech_transcript ? (
-          <div className="quote-box">
-            <div className="label">PESAN PASIEN</div>
+          <div className="my-3.5 rounded-lg bg-surface-sunken p-3 text-[13px] text-ink">
+            <div className="mb-1 text-[10.5px] font-bold tracking-[0.04em] text-mute">PESAN PASIEN</div>
             "{item.patient_speech_transcript}"
           </div>
         ) : (
-          <div className="quote-box">
-            <div className="label">PANGGILAN</div>
+          <div className="my-3.5 rounded-lg bg-surface-sunken p-3 text-[13px] text-ink">
+            <div className="mb-1 text-[10.5px] font-bold tracking-[0.04em] text-mute">PANGGILAN</div>
             Dipicu lewat tombol bantuan di gelang (tanpa pesan suara).
           </div>
         )}
       </div>
 
-      <div style={{ marginTop: 14 }}>
-        <button className="btn rose" onClick={onAcknowledge}>Tangani</button>
+      <div className="mt-3.5">
+        <button
+          type="button"
+          className="w-full cursor-pointer rounded-full bg-alert py-3.25 px-4 text-center text-sm font-bold text-white transition hover:opacity-90 active:scale-[0.99]"
+          onClick={onAcknowledge}
+        >
+          Tangani
+        </button>
       </div>
-      <div style={{ marginTop: 8 }}>
-        <button className="btn ghost" onClick={onLater}>Nanti Dulu</button>
+      <div className="mt-2">
+        <button
+          type="button"
+          className="w-full cursor-pointer rounded-full bg-surface-sunken py-3 px-4 text-center text-sm font-bold text-ink transition hover:opacity-90 active:scale-[0.99]"
+          onClick={onLater}
+        >
+          Nanti Dulu
+        </button>
       </div>
     </BottomSheet>
   );
