@@ -2,8 +2,6 @@ import bcrypt from "bcryptjs";
 import { userRepository } from "../repositories/user.repository.js";
 
 export const authService = {
-  // Demo-grade: bukan JWT asli, cuma base64(userId) supaya frontend punya sesuatu untuk disimpan.
-  // Cukup untuk membedakan 2 akun demo di satu browser yang sama — JANGAN dipakai di production.
   async login(username: string, password: string) {
     const user = await userRepository.findByUsername(username);
     if (!user) return null;

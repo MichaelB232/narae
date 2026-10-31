@@ -34,11 +34,19 @@ export interface UpdateTaskParams {
 }
 
 export const taskRepository = {
-  // Semua task milik pasien (bukan cuma hari ini) — dipakai section "Edit Jadwal Keluarga"
-  // tempat perawat kelola definisi jadwal, beda dari "Aktivitas Hari Ini" yang cuma instance hari ini.
   async findAllByPatient(patientId: number): Promise<PatientTask[]> {
     const { rows } = await pool.query<PatientTask>(
-      `SELECT * FROM patient_tasks WHERE patient_id = $1 AND is_active = true ORDER BY scheduled_time`,
+      `SELECT id, patient_id, created_by, task_name, spoken_instruction, voice_profile_id,
+              generated_audio_url, type, days_of_week, scheduled_time, duration_minutes, scheduled_date,
+              is_active,
+              CASE
+                WHEN status = 'MISSED' AND (now() AT TIME ZONE 'Asia/Jakarta')::time < scheduled_time THEN 'SCHEDULED'::task_status
+                ELSE status
+              END AS status,
+              created_at
+       FROM patient_tasks
+       WHERE patient_id = $1 AND is_active = true
+       ORDER BY scheduled_time`,
       [patientId]
     );
     return rows;
@@ -72,8 +80,6 @@ export const taskRepository = {
     return rows[0];
   },
 
-  // Edit "as a whole" (nama/jam/durasi) — TERPISAH dari setStatus (lihat diskusi: dua jenis
-  // edit yang berbeda, satu mengubah data task, satu mengubah status siklus hariannya).
   async update(params: UpdateTaskParams): Promise<PatientTask | null> {
     const { rows } = await pool.query<PatientTask>(
       `UPDATE patient_tasks SET

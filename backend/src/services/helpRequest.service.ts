@@ -10,8 +10,6 @@ export const helpRequestService = {
     await helpRequestRepository.expireOverdue();
     return helpRequestRepository.findById(id);
   },
-
-  // Dipakai 2 jalur: tombol fisik (triggeredByInteractionId = null) dan dari AI (terisi).
   create: (
     patientId: number,
     deviceId: number,

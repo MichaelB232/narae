@@ -3,8 +3,8 @@ const ANN=[   // s: kolom kiri "L"/kanan "R"; fy: posisi vertikal (fraksi tinggi
  {k:"speaker",p:[-1.15,1.2,-3],s:"L",fy:.24,t:"Speaker",d:"Suara jawaban dan pengingat."},
  {k:"bantuan",p:[-1.2,1.4,1.6],s:"L",fy:.50,t:"Tombol Bantuan",d:"Tekan lalu bicara. NARAE menjawab; jika darurat, perawat dipanggil."},
  {k:"led",p:[1,1.25,-3],s:"R",fy:.16,t:"Lampu status",d:'<i class="dot" style="background:#2f6df0"></i>Mendengarkan<br><i class="dot" style="background:#ffb020"></i>Memproses / mengirim<br><i class="dot" style="background:#23e08a"></i>Bantuan diterima<br><i class="dot" style="background:#ff3b2f"></i>Gagal / tak terdengar'},
- {k:"jadwal",p:[1,1.4,-1.35],s:"R",fy:.42,t:"Tombol Jadwal",d:"Tekan untuk mendengar jadwal hari ini."},
- {k:"mic",p:[2.2,1.2,-1.9],s:"R",fy:.64,t:"Mikrofon",d:"Cincin merah berkedip saat merekam."}
+ {k:"jadwal",p:[1,1.4,-1.35],s:"R",fy:.64,t:"Tombol Jadwal",d:"Tekan untuk mendengar jadwal hari ini."},
+ {k:"mic",p:[2.2,1.2,-1.9],s:"R",fy:.42,t:"Mikrofon",d:"Cincin merah berkedip saat merekam."}
 ];
 const annBox=document.getElementById("anns"),annSvg=document.getElementById("annsvg"),tmpV=new THREE.Vector3();let annOn=true;
 ANN.forEach(a=>{a.v=v3(...a.p);a.el=document.createElement("div");a.el.className="ann";a.el.innerHTML="<b>"+a.t+"</b><span>"+a.d+"</span>";annBox.appendChild(a.el);
