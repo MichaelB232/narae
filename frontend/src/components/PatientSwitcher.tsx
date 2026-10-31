@@ -31,7 +31,7 @@ export function PatientSwitcher({
       <select
         value={selectedId}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="cursor-pointer border-none bg-transparent text-center text-[13.5px] font-bold text-ink focus:outline-none"
+        className="cursor-pointer appearance-none border-none bg-transparent p-0 text-center [text-align-last:center] text-[13.5px] font-bold text-ink focus:outline-none"
       >
         {patients.map((p) => (
           <option key={p.id} value={p.id}>{p.name}</option>
