@@ -26,8 +26,6 @@ const navyCardClass =
 const headingClass = "text-sm font-bold text-slate-900";
 const headingBlueClass = "text-sm font-bold text-slate-900 bg-linear-to-r from-[#426783] to-[#A8C1D1] p-4";
 
-const descriptionClass = "text-xs leading-relaxed text-slate-500";
-
 const buttonBaseClass =
   "inline-flex items-center justify-center rounded-xl px-3 py-2.5 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50";
 
@@ -194,6 +192,73 @@ export function BerandaPage() {
   );
 }
 
+// ======================= REUSABLE COMPONENT =======================
+
+function TaskCompletedByPatient({
+  pendingTasks,
+  patientName,
+  onConfirm,
+}: {
+  pendingTasks: TaskItem[];
+  patientName?: string;
+  onConfirm: (taskId: number, approve: boolean) => void;
+}) {
+  if (pendingTasks.length === 0) return null;
+
+  return (
+    <section className={navyCardClass}>
+      <h2 className={headingClass}>
+        Menunggu Persetujuan Caregiver
+      </h2>
+
+      <p className="mb-3 mt-1 text-xs leading-relaxed text-slate-500">
+        Pasien {patientName ?? "ini"} melapor tugas selesai via Asisten AI.
+      </p>
+
+      <div className="flex flex-col gap-3">
+        {pendingTasks.map((t) => (
+          <div
+            key={t.id}
+            className="border-t border-slate-200 pt-3 first:border-0 first:pt-0"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <h3 className="text-sm font-bold text-slate-800">
+                  {t.task_name}
+                </h3>
+
+                <p className="mt-1 text-[11px] text-slate-500">
+                  Jadwal: {hhmm(t.scheduled_time)}
+                </p>
+              </div>
+
+              <span className="shrink-0 rounded-full bg-[#e3eaf3] px-2.5 py-1 text-[10px] font-semibold text-[#344966]">
+                Laporan AI
+              </span>
+            </div>
+
+            <div className="mt-3 flex gap-2">
+              <button
+                className={`flex-1 ${approveButtonClass}`}
+                onClick={() => onConfirm(t.id, true)}
+              >
+                ✓ Setujui Selesai
+              </button>
+
+              <button
+                className={`flex-1 ${rejectButtonClass}`}
+                onClick={() => onConfirm(t.id, false)}
+              >
+                ✕ Tolak
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 // ======================= DASHBOARD 1 PASIEN =======================
 
 function SingleDashboard({
@@ -231,27 +296,21 @@ function SingleDashboard({
 
   const total = detail.todayTasks.length;
 
-  const pendingConfirm = detail.todayTasks.find(
+  const pendingTasks = detail.todayTasks.filter(
     (t) => t.status === "REPORTED_COMPLETE_BY_PATIENT"
   );
 
-  const age = calcAge(detail.patient.date_of_birth);
-
-  async function confirm(taskId: number, approve: boolean) {
+  async function handleConfirm(taskId: number, approve: boolean) {
     await api.confirmTask(taskId, nurseId, approve);
     load();
   }
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] text-slate-800 pb-24 font-sans antialiased">
-
       {/* ================= HEADER BIRU DENGAN LENGKUNGAN ================= */}
       <div className="relative bg-gradient-to-b from-[#64849B] to-[#7E9EB2] pt-[64px] pb-20 px-6 text-white">
-
-        {/* Logo */}
         <h1 className="text-xl font-bold tracking-wider">narae.</h1>
 
-        {/* Sambutan */}
         <div className="mt-5">
           <h2 className="text-2xl font-bold">Selamat Pagi, {nurseName.split(" ")[1] ?? nurseName}</h2>
           <p className="text-xs text-slate-100 opacity-90 mt-1">
@@ -259,7 +318,6 @@ function SingleDashboard({
           </p>
         </div>
 
-        {/* SVG Wave / Kurva di Bagian Bawah Header */}
         <div className="absolute bottom-0 left-0 right-0 overflow-hidden leading-none pointer-events-none">
           <svg
             viewBox="0 0 500 40"
@@ -271,18 +329,14 @@ function SingleDashboard({
         </div>
       </div>
 
-
       {/* ================= KONTEN UTAMA (CARD CONTAINER) ================= */}
-      {/* Menggunakan -mt-12 agar card naik dan menumpang di atas header biru */}
       <div className="px-5 -mt-12 relative z-10 max-w-md mx-auto space-y-4">
-
-        {/* --- Card 1: Profil Pasien (Ibu Odette) --- */}
+        {/* --- Card 1: Profil Pasien --- */}
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img
               src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=150"
-              // name={detail.patient.name}
-              alt="Ibu Odette"
+              alt={detail.patient.name}
               className="w-14 h-14 rounded-full object-cover"
             />
             <div>
@@ -294,25 +348,24 @@ function SingleDashboard({
           <div className="text-right flex">
             <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold mb-1">
               <span
-                className={`rounded-full px-2 py-1 text-[10px] font-semibold ${detail.patient.is_online
-                  ? "bg-emerald-50 text-emerald-700"
-                  : "bg-slate-100 text-slate-500"
-                  }`}
+                className={`rounded-full px-2 py-1 text-[10px] font-semibold ${
+                  detail.patient.is_online
+                    ? "bg-emerald-50 text-emerald-700"
+                    : "bg-slate-100 text-slate-500"
+                }`}
               >
                 {detail.patient.is_online ? "• Online" : "• Offline"}
-              </span>
-              <span
-                className={`rounded-full px-2 py-1 text-[10px] font-semibold ${detail.patient.is_online
-                  ? "text-emerald-50 bg-emerald-700"
-                  : "text-slate-100 bg-slate-500"
-                  }`}
-              >
-                67%
               </span>
             </div>
           </div>
         </div>
 
+        {/* --- Card Persetujuan Tugas dari Pasien --- */}
+        <TaskCompletedByPatient
+          pendingTasks={pendingTasks}
+          patientName={detail.patient.name}
+          onConfirm={handleConfirm}
+        />
 
         {/* --- Card 2: Aktivitas Hari Ini --- */}
         <section className={cardClass}>
@@ -330,20 +383,13 @@ function SingleDashboard({
             </p>
           </div>
 
-
           <div className="flex flex-col gap-1 p-4">
             {detail.todayTasks.map((t) => (
               <TimelineRow key={t.id} task={t} />
             ))}
           </div>
         </section>
-
-
       </div>
-
-
-
-
     </div>
   );
 }
@@ -366,25 +412,23 @@ function MultiDashboard({
   navigate: (p: string) => void;
 }) {
   const [selectedId, setSelectedId] = useState(patients[0].id);
-
-  const [selectedDetail, setSelectedDetail] =
-    useState<PatientDetail | null>(null);
+  const [selectedDetail, setSelectedDetail] = useState<PatientDetail | null>(null);
 
   useEffect(() => {
     setSelectedDetail(null);
     api.patientDetail(selectedId).then(setSelectedDetail);
   }, [selectedId]);
 
+  const pendingMulti =
+    selectedDetail?.todayTasks.filter(
+      (t) => t.status === "REPORTED_COMPLETE_BY_PATIENT"
+    ) ?? [];
+
   const activeCalls = helpRequests.filter(
     (h) => h.status === "PENDING" || h.status === "ACKNOWLEDGED"
   );
 
   const onlineCount = patients.filter((p) => p.is_online).length;
-
-  const pendingMulti =
-    selectedDetail?.todayTasks.filter(
-      (t) => t.status === "REPORTED_COMPLETE_BY_PATIENT"
-    ) ?? [];
 
   async function handleConfirmMulti(taskId: number, approve: boolean) {
     await api.confirmTask(taskId, nurseId, approve);
@@ -393,14 +437,10 @@ function MultiDashboard({
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] text-slate-800 pb-24 font-sans antialiased no-scrollbar overflow-y-auto">
-
       {/* ================= HEADER BIRU DENGAN LENGKUNGAN ================= */}
       <div className="relative bg-gradient-to-b from-[#64849B] to-[#7E9EB2] pt-[64px] pb-20 px-6 text-white">
-
-        {/* Logo */}
         <h1 className="text-xl font-bold tracking-wider">narae.</h1>
 
-        {/* Sambutan */}
         <div className="mt-5">
           <h2 className="text-2xl font-bold">
             Selamat Pagi, {nurseName.split(" ")[1] ?? nurseName}
@@ -410,7 +450,6 @@ function MultiDashboard({
           </p>
         </div>
 
-        {/* SVG Wave / Kurva di Bagian Bawah Header */}
         <div className="absolute bottom-0 left-0 right-0 overflow-hidden leading-none pointer-events-none">
           <svg
             viewBox="0 0 500 40"
@@ -422,43 +461,28 @@ function MultiDashboard({
         </div>
       </div>
 
-
       {/* ================= KONTEN UTAMA (CARD CONTAINER) ================= */}
       <div className="px-5 -mt-12 relative z-10 max-w-md mx-auto flex flex-col gap-6">
-
         {/* --- Card 1: Profil Pasien & Ringkasan Perangkat --- */}
         <section className={cardClass}>
           <div className="flex">
             <div className="min-w-0 flex-1 p-4">
-              <p className="text-xs text-slate-500">
-                Pasien Terdaftar
-              </p>
-
-              <p className="mt-1 text-2xl font-bold text-slate-800">
-                {patients.length}
-              </p>
-
-              <p className="mt-1 text-[11px] text-emerald-700">
-                {onlineCount} perangkat online
-              </p>
+              <p className="text-xs text-slate-500">Pasien Terdaftar</p>
+              <p className="mt-1 text-2xl font-bold text-slate-800">{patients.length}</p>
+              <p className="mt-1 text-[11px] text-emerald-700">{onlineCount} perangkat online</p>
             </div>
 
             <div className="min-w-0 flex-1 p-4">
-              <p className="text-xs text-slate-500">
-                Tugas Hari Ini
-              </p>
-
+              <p className="text-xs text-slate-500">Tugas Hari Ini</p>
               <p className="mt-1 text-2xl font-bold text-slate-800">
                 {selectedDetail?.todayTasks.length ?? "-"}
               </p>
-
               <p className="mt-1 truncate text-[11px] text-slate-500">
                 untuk {selectedDetail?.patient.name ?? "…"}
               </p>
             </div>
           </div>
         </section>
-
 
         {/* --- PANGGILAN MENUNGGU RESPON (URGENT) --- */}
         {activeCalls.length > 0 && (
@@ -484,10 +508,7 @@ function MultiDashboard({
                       <h3 className="truncate text-sm font-bold text-slate-800">
                         {h.patient_name}
                       </h3>
-
-                      <p className="text-xs text-slate-500">
-                        {h.room_number ?? ""}
-                      </p>
+                      <p className="text-xs text-slate-500">{h.room_number ?? ""}</p>
                     </div>
                   </div>
 
@@ -496,7 +517,6 @@ function MultiDashboard({
                       <p className="mb-1 text-[10px] font-bold tracking-wide text-[#C65353]">
                         PESAN PASIEN
                       </p>
-
                       <p className="text-xs leading-relaxed text-slate-700">
                         "{h.patient_speech_transcript}"
                       </p>
@@ -515,64 +535,12 @@ function MultiDashboard({
           </section>
         )}
 
-
-        {/* --- MENUNGGU PERSETUJUAN CAREGIVER --- */}
-        {/* {pendingMulti.length} */}
-        {pendingMulti.length > 0 && (
-          <section className={navyCardClass}>
-            <h2 className={headingClass}>
-              Menunggu Persetujuan Caregiver
-              {/* {pendingMulti.length} */}
-            </h2>
-
-            <p className="mb-3 mt-1 text-xs leading-relaxed text-slate-500">
-              Pasien {selectedDetail?.patient.name} melapor tugas selesai via Asisten AI.
-            </p>
-
-            <div className="flex flex-col gap-3">
-              {pendingMulti.map((t) => (
-                <div
-                  key={t.id}
-                  className="border-t border-slate-200 pt-3 first:border-0 first:pt-0"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="min-w-0">
-                      <h3 className="text-sm font-bold text-slate-800">
-                        {t.task_name}
-                      </h3>
-
-                      <p className="mt-1 text-[11px] text-slate-500">
-                        Jadwal: {hhmm(t.scheduled_time)}
-                      </p>
-                    </div>
-
-                    <span className="shrink-0 rounded-full bg-[#e3eaf3] px-2.5 py-1 text-[10px] font-semibold text-[#344966]">
-                      Laporan AI
-                    </span>
-                  </div>
-
-                  <div className="mt-3 flex gap-2">
-                    <button
-                      className={`flex-1 ${approveButtonClass}`}
-                      onClick={() => handleConfirmMulti(t.id, true)}
-                    >
-                      ✓ Setujui Selesai
-                    </button>
-
-                    <button
-                      className={`flex-1 ${rejectButtonClass}`}
-                      onClick={() => handleConfirmMulti(t.id, false)}
-                    >
-                      ✕ Tolak
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-              )}
-        
-
+        {/* --- MENUNGGU PERSETUJUAN CAREGIVER (Menggunakan Komponen Bersama) --- */}
+        <TaskCompletedByPatient
+          pendingTasks={pendingMulti}
+          patientName={selectedDetail?.patient.name}
+          onConfirm={handleConfirmMulti}
+        />
 
         {/* --- CARD 2: AKTIVITAS / JADWAL HARI INI --- */}
         <section className={cardClass}>
@@ -583,13 +551,13 @@ function MultiDashboard({
                 : "Hari ini Berjalan Sangat Baik"}
             </h2>
 
-            <p className="text-xs opacity-90 mt-0.5  text-white">
-              {selectedDetail?.todayTasks.filter(t => t.status === 'CONFIRMED_BY_NURSE').length ?? 0} dari {selectedDetail?.todayTasks.length ?? 0} aktivitas selesai
+            <p className="text-xs opacity-90 mt-0.5 text-white">
+              {selectedDetail?.todayTasks.filter((t) => t.status === "CONFIRMED_BY_NURSE").length ?? 0}{" "}
+              dari {selectedDetail?.todayTasks.length ?? 0} aktivitas selesai
             </p>
           </div>
 
           <div className="p-4">
-            {/* Switcher Pasien jika ingin tetap bisa ganti-ganti */}
             <div className="mb-3">
               <PatientSwitcher
                 patients={patients}
@@ -617,14 +585,13 @@ function MultiDashboard({
             </div>
 
             <button
-              className={`mt-4 w-full ${navyButtonClass ?? "bg-[#64849B] text-white py-2.5 rounded-xl text-xs font-semibold"}`}
+              className={`mt-4 w-full ${navyButtonClass}`}
               onClick={() => navigate(`/keluarga/${selectedId}`)}
             >
               Lihat Semua
             </button>
           </div>
         </section>
-
       </div>
     </div>
   );
@@ -638,27 +605,25 @@ function TimelineRow({ task }: { task: TaskItem }) {
 
   return (
     <div
-      className={`flex items-center gap-3 rounded-lg px-2 py-2 ${isMissed ? "my-0.5 " : ""
-        }`}
+      className={`flex items-center gap-3 rounded-lg px-2 py-2 ${
+        isMissed ? "my-0.5 " : ""
+      }`}
     >
-      {/* TIMELINE DOT */}
       <span
-        className={`h-2.5 w-2.5 shrink-0 rounded-full ${meta.dotMuted ? "bg-slate-300" : "bg-[#526b8a]"
-          }`}
+        className={`h-2.5 w-2.5 shrink-0 rounded-full ${
+          meta.dotMuted ? "bg-slate-300" : "bg-[#526b8a]"
+        }`}
       />
 
-      {/* TASK INFORMATION */}
       <div className="min-w-0 flex-1">
         <p className="truncate text-xs font-semibold text-slate-800">
           {task.task_name}
         </p>
-
         <p className="mt-0.5 text-[11px] text-slate-500">
           {hhmm(task.scheduled_time)} WIB
         </p>
       </div>
 
-      {/* TASK STATUS */}
       <span
         className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold ${getStatusClass(
           meta.tone
