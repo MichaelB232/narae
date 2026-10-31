@@ -8,10 +8,10 @@ function helpView(extraText){
     listening:["blue","Mendengarkan…","Silakan bicara sekarang."],
     thinking:["amber","Memproses…","NARAE sedang memikirkan jawabannya."],
     answered:["blue","NARAE menjawab",extraText||""],
-    sending:["amber","Mengirim permintaan bantuan…","Mikrofon aktif. Tetap tenang, bantuan sedang diminta."],
-    sent:["amber","Terkirim","Menunggu pendamping merespons…"],
-    ok:["green","Bantuan diterima",extraText||"Perawat sudah diberi tahu."],
-    fail:["red","Gagal terkirim","Periksa koneksi lalu coba lagi."],
+    sending:["amber","Mengirim permintaan bantuan…",extraText||"Menghubungi perawat..."],
+    sent:["amber","Menghubungi Perawat",extraText||"Menunggu respons perawat…"],
+    ok:["green","Bantuan diterima",extraText||"Perawat sedang dalam perjalanan."],
+    fail:["red","Panggilan belum terjawab",extraText||"Perawat belum dapat dihubungi."],
     "no-speech":["red","Tidak terdengar","Coba tekan Bantuan lagi dan bicara lebih jelas."]
   }[s];
   const ch=(n,c)=>'<span class="chip '+(c||"")+'">'+n+"</span>",
@@ -32,11 +32,86 @@ function helpView(extraText){
 function isExitPhrase(txt){
   if(!txt)return false;
   const t=txt.toLowerCase().trim();
-  const keywords=["sudah selesai","makasi","makasih","terima kasih","cukup","udah itu aja","udah","tutup","bye","that's all","tyty","tidak ada lagi","nggak ada lagi","gak ada lagi"];
+  const keywords=["makasi","makasih","terima kasih","cukup","udah itu aja","tutup","bye","that's all","tyty","tidak ada lagi","nggak ada lagi","gak ada lagi","sampai jumpa","keluar"];
   return keywords.some(k=>t.includes(k));
 }
 
 let converseTurnCount = 0;
+
+function waitForNurseResponse(requestId){
+  let timeLeft = 10;
+  help.s = "sent";
+  setLed("amber", true);
+
+  function updateStatus(sec){
+    helpView("Menghubungi perawat... Menunggu konfirmasi (" + sec + " detik)");
+  }
+  updateStatus(timeLeft);
+
+  const pollInterval = setInterval(async () => {
+    timeLeft--;
+    if (help.s === "idle") {
+      clearInterval(pollInterval);
+      return;
+    }
+
+    if (requestId) {
+      try {
+        const res = await fetch(CONFIG.storage.url + "/help-requests/" + requestId);
+        if (res.ok) {
+          const reqData = await res.json();
+          if (reqData.status === "ACKNOWLEDGED") {
+            clearInterval(pollInterval);
+            help.s = "ok";
+            micOn = false;
+            setLed("green", false);
+            [660, 880, 1100].forEach((f, i) => beep(f, .14, "sine", .12, i * .13));
+            const msg = "Perawat sudah menerima panggilan dan sedang dalam perjalanan. Mohon tunggu sebentar ya.";
+            helpView(msg);
+            say(msg, () => {
+              later(() => helpEnd(), 3500);
+            });
+            return;
+          } else if (reqData.status === "EXPIRED" || reqData.status === "RESOLVED") {
+            clearInterval(pollInterval);
+            help.s = "fail";
+            micOn = false;
+            setLed("red", true);
+            beep(180, .5, "sawtooth", .1);
+            const msg = "Maaf, perawat sedang tidak dapat dihubungi. Panggilan telah dicatat di sistem sebagai pesan penting.";
+            helpView(msg);
+            say(msg, () => later(() => helpEnd(), 3500));
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn("Poll help request failed:", err);
+      }
+    }
+
+    if (timeLeft <= 0) {
+      clearInterval(pollInterval);
+      if (requestId) {
+        fetch(CONFIG.storage.url + "/help-requests/" + requestId, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "EXPIRED" })
+        }).catch(() => {});
+      }
+      help.s = "fail";
+      micOn = false;
+      setLed("red", true);
+      beep(180, .5, "sawtooth", .1);
+      const msg = "Maaf, perawat sedang tidak dapat dihubungi. Panggilan telah dicatat di sistem sebagai pesan penting.";
+      helpView(msg);
+      say(msg, () => later(() => helpEnd(), 3500));
+    } else {
+      updateStatus(timeLeft);
+    }
+  }, 1000);
+
+  help.t.push(pollInterval);
+}
 
 async function runConverseTurn(){
   help.s="listening";micOn=true;setLed("blue",true);helpView();
@@ -92,18 +167,16 @@ async function runConverseTurn(){
       return;
     }
 
-    help.s="sending";setLed("amber",true);helpView();
-    later(()=>{
-      help.s="sent";setLed("amber",false);helpView();
-      later(()=>{
-        help.s="ok";micOn=false;setLed("green",false);
-        [660,880,1100].forEach((f,i)=>beep(f,.14,"sine",.12,i*.13));
-        say(data.responseText,()=>{
-          later(()=>helpEnd(),3000);
-        });
-        helpView(data.responseText);
-      },CONFIG.help.ackMs);
-    },CONFIG.help.sendMs);
+    // Kasus Pasien Meminta Panggil Perawat
+    micOn=false;
+    help.s="sending";
+    setLed("amber",true);
+    helpView(data.responseText);
+    say(data.responseText, ()=>{
+      if(help.s!=="idle"){
+        waitForNurseResponse(data.helpRequest ? data.helpRequest.id : null);
+      }
+    });
 
   }catch(err){
     console.error(err);

@@ -7,7 +7,6 @@ import { env } from "../config/env.js";
 import { userRepository } from "../repositories/user.repository.js";
 import { formatDate } from "../utils/date.js";
 
-
 const dataProvider: AgentDataProvider = {
   async getPatientTasks(patientId: number) {
     const tasks = await patientRepository.findActiveTasks(patientId);
@@ -29,33 +28,44 @@ const dataProvider: AgentDataProvider = {
       item_name: b.item_name,
       last_location: b.last_location,
       default_location: b.default_location ?? null,
-    }))
+    }));
   },
+
   async getBelongings(patientId: number) {
     const belongings = await patientRepository.findBelongings(patientId);
     return belongings.map((b) => ({ item_name: b.item_name }));
   },
+
   async reportTaskComplete(patientId: number, taskName: string) {
     const todayTasks = await patientRepository.findTodayTasks(patientId);
     const clean = (taskName || "").toLowerCase().trim();
+
+    const genericWords = ["tugas", "kegiatan", "jadwal", "semua", "pekerjaan", "aktivitas", "semuanya"];
+    if (!clean || genericWords.includes(clean)) {
+      return {
+        success: false,
+        taskName: clean || "tugas",
+        message: "Nama tugas belum disebutkan secara spesifik oleh pasien. Tanyakan kepada pasien tugas apa yang sudah selesai.",
+      };
+    }
+
     let matched = todayTasks.find(
       (t) => t.task_name.toLowerCase().includes(clean) || (clean.length > 3 && clean.includes(t.task_name.toLowerCase()))
     );
 
     if (!matched) {
-      const active = todayTasks.filter((t) => t.status === "SCHEDULED" || t.status === "REMINDER_PLAYED");
-      if (active.length > 0) matched = active[0];
-    }
-
-    if (!matched) {
-      return { success: false, taskName, message: `Tidak ada tugas '${taskName}' yang belum selesai hari ini.` };
+      return {
+        success: false,
+        taskName: clean,
+        message: `Tidak ada tugas '${taskName}' yang belum selesai pada jadwal hari ini. Tanyakan kembali ke pasien tugas apa yang dimaksud.`,
+      };
     }
 
     await taskService.reportCompleteByPatient(matched.id);
     return {
       success: true,
       taskName: matched.task_name,
-      message: `Tugas '${matched.task_name}' berhasil ditandai selesai oleh pasien dan menunggu konfirmasi perawat.`,
+      message: `Tugas '${matched.task_name}' berhasil ditandai selesai oleh pasien (REPORTED_COMPLETE_BY_PATIENT) dan menunggu konfirmasi perawat.`,
     };
   },
 };

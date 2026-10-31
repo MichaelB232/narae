@@ -6,14 +6,15 @@ export const reportTaskCompleteTool: Tool = {
   declaration: {
     name: "report_task_complete",
     description:
-      "Gunakan tool ini ketika pasien menyatakan atau melapor bahwa ia sudah melakukan/menyelesaikan jadwal atau kegiatan tertentu " +
-      "(contoh: 'sudah minum obat', 'sudah sarapan', 'sudah jalan pagi').",
+      "Gunakan tool ini HANYA jika pasien secara spesifik menyebutkan nama kegiatan atau tugas tertentu yang telah selesai " +
+      "(contoh: 'sudah minum obat', 'sudah sarapan', 'sudah jalan pagi'). " +
+      "JANGAN panggil jika pasien hanya mengatakan kalimat umum seperti 'saya sudah menyelesaikan tugas' tanpa menyebutkan nama tugasnya.",
     parameters: {
       type: SchemaType.OBJECT,
       properties: {
         taskName: {
           type: SchemaType.STRING,
-          description: "Nama tugas atau kata kunci kegiatan yang dilaporkan selesai oleh pasien.",
+          description: "Nama tugas atau kata kunci kegiatan spesifik yang dilaporkan selesai oleh pasien.",
         },
       },
       required: ["taskName"],

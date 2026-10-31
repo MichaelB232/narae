@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
@@ -26,8 +25,6 @@ const navyCardClass =
 
 const headingClass = "text-sm font-bold text-slate-900";
 const headingBlueClass = "text-sm font-bold text-slate-900 bg-linear-to-r from-[#426783] to-[#A8C1D1] p-4";
-
-const descriptionClass = "text-xs leading-relaxed text-slate-500";
 
 const buttonBaseClass =
   "inline-flex items-center justify-center rounded-xl px-3 py-2.5 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50";
@@ -126,13 +123,20 @@ export function BerandaPage() {
     }
   }
 
-  function handleLaterFromSheet() {
+  async function handleLaterFromSheet() {
     if (!sheetItem) return;
 
     const currentId = Number(sheetItem.id);
 
+    try {
+      await api.expireHelp(currentId);
+    } catch (e) {
+      console.warn("Expire help warning:", e);
+    }
+
     setDismissedIds((prev) => new Set(prev).add(currentId));
     setSheetItem(null);
+    loadHelp();
   }
 
   // No registered patients.
@@ -162,6 +166,9 @@ export function BerandaPage() {
           patient={patients[0]}
           nurseId={user.id}
           nurseName={user.full_name}
+          helpRequests={helpRequests}
+          onOpenCall={(h) => setSheetItem(h)}
+          onReloadHelp={loadHelp}
           navigate={navigate}
         />
 
@@ -183,6 +190,7 @@ export function BerandaPage() {
         nurseId={user.id}
         nurseName={user.full_name}
         onOpenCall={(h) => setSheetItem(h)}
+        onReloadHelp={loadHelp}
         navigate={navigate}
       />
 
@@ -201,11 +209,17 @@ function SingleDashboard({
   patient,
   nurseId,
   nurseName,
+  helpRequests,
+  onOpenCall,
+  onReloadHelp,
   navigate,
 }: {
   patient: PatientListItem;
   nurseId: number;
   nurseName: string;
+  helpRequests: HelpRequestItem[];
+  onOpenCall: (h: HelpRequestItem) => void;
+  onReloadHelp: () => void;
   navigate: (p: string) => void;
 }) {
   const [detail, setDetail] = useState<PatientDetail | null>(null);
@@ -238,6 +252,14 @@ function SingleDashboard({
 
   const age = calcAge(detail.patient.date_of_birth);
 
+  const activeCalls = helpRequests.filter(
+    (h) => (h.status === "PENDING" || h.status === "ACKNOWLEDGED") && h.patient_id === patient.id
+  );
+
+  const missedCalls = helpRequests.filter(
+    (h) => h.status === "EXPIRED" && h.patient_id === patient.id
+  );
+
   async function confirm(taskId: number, approve: boolean) {
     await api.confirmTask(taskId, nurseId, approve);
     load();
@@ -259,6 +281,136 @@ function SingleDashboard({
             Ringkasan pendampingan pasien untuk hari ini.
           </p>
         </div>
+      </section>
+
+      {/* MISSED CALLS IN SINGLE DASHBOARD */}
+      {missedCalls.length > 0 && (
+        <section>
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="flex items-center gap-2 text-sm font-bold text-rose-800">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75"></span>
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-rose-500"></span>
+              </span>
+              Panggilan Terlewat (Missed Call)
+            </h2>
+            <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-700">
+              {missedCalls.length} Panggilan
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            {missedCalls.map((h) => (
+              <div
+                key={h.id}
+                className="relative rounded-2xl border border-rose-200 bg-rose-50/70 p-4"
+              >
+                <div className="mb-2 flex items-center gap-3">
+                  <Avatar name={h.patient_name} />
+                  <div className="min-w-0">
+                    <h3 className="truncate text-sm font-bold text-slate-800">
+                      {h.patient_name}
+                    </h3>
+                    <p className="text-xs font-medium text-rose-600">
+                      Panggilan tidak terjawab (10 detik)
+                    </p>
+                  </div>
+                </div>
+
+                {h.patient_speech_transcript && (
+                  <div className="mb-3 rounded-xl border border-rose-100 bg-white p-2.5 text-xs text-slate-700">
+                    <p className="mb-0.5 text-[10px] font-bold tracking-wide text-rose-600">
+                      PESAN PASIEN
+                    </p>
+                    "{h.patient_speech_transcript}"
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <button
+                    className={`flex-1 ${approveButtonClass}`}
+                    onClick={async () => {
+                      await api.resolveHelp(h.id);
+                      onReloadHelp();
+                    }}
+                  >
+                    ✓ Tandai Selesai
+                  </button>
+                  <button
+                    className={`flex-1 ${navyButtonClass}`}
+                    onClick={() => navigate(`/keluarga/${h.patient_id}`)}
+                  >
+                    Cek Pasien
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ACTIVE CALLS IN SINGLE DASHBOARD */}
+      {activeCalls.length > 0 && (
+        <section>
+          <h2 className="mb-2 text-sm font-bold text-slate-800">
+            Panggilan Menunggu Respons
+          </h2>
+
+          <div className="flex flex-col gap-3">
+            {activeCalls.map((h) => (
+              <div
+                key={h.id}
+                className="relative rounded-2xl border border-rose-200 bg-rose-50 p-4"
+              >
+                <span className="absolute right-4 top-4 rounded-full bg-rose-100 px-2.5 py-1 text-[9px] font-bold tracking-wide text-rose-700">
+                  URGENT
+                </span>
+
+                <div className="mb-3 flex items-center gap-3 pr-16">
+                  <Avatar name={h.patient_name} />
+                  <div className="min-w-0">
+                    <h3 className="truncate text-sm font-bold text-slate-800">
+                      {h.patient_name}
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      {h.room_number ?? ""}
+                    </p>
+                  </div>
+                </div>
+
+                {h.patient_speech_transcript && (
+                  <div className="mb-3 rounded-xl border border-rose-100 bg-white p-3">
+                    <p className="mb-1 text-[10px] font-bold tracking-wide text-rose-600">
+                      PESAN PASIEN
+                    </p>
+                    <p className="text-xs leading-relaxed text-slate-700">
+                      "{h.patient_speech_transcript}"
+                    </p>
+                  </div>
+                )}
+
+                <button
+                  className={`${buttonBaseClass} w-full bg-rose-600 text-white hover:bg-rose-700`}
+                  onClick={() => onOpenCall(h)}
+                >
+                  Tangani
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* DAILY TIMELINE */}
+      <section className={cardClass}>
+        <div className={headingBlueClass}>
+          <h2 className="text-white">
+            {total === 0
+              ? "Belum Ada Jadwal Hari Ini"
+              : done === total
+                ? "Hari ini Berjalan Sangat Baik"
+                : "Hari ini Sedang Berjalan"}
+          </h2>
 
         {/* SVG Wave / Kurva di Bagian Bawah Header */}
         <div className="absolute bottom-0 left-0 right-0 overflow-hidden leading-none pointer-events-none">
@@ -272,46 +424,10 @@ function SingleDashboard({
         </div>
       </div>
 
-
-      {/* ================= KONTEN UTAMA (CARD CONTAINER) ================= */}
-      {/* Menggunakan -mt-12 agar card naik dan menumpang di atas header biru */}
-      <div className="px-5 -mt-12 relative z-10 max-w-md mx-auto space-y-4">
-
-        {/* --- Card 1: Profil Pasien (Ibu Odette) --- */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img
-              src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=150"
-              // name={detail.patient.name}
-              alt="Ibu Odette"
-              className="w-14 h-14 rounded-full object-cover"
-            />
-            <div>
-              <p className="text-xs text-slate-400 font-medium">Kamu Mendampingi</p>
-              <h3 className="text-base font-bold text-slate-800">{detail.patient.name}</h3>
-            </div>
-          </div>
-
-          <div className="text-right flex">
-            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold mb-1">
-              <span
-                className={`rounded-full px-2 py-1 text-[10px] font-semibold ${detail.patient.is_online
-                  ? "bg-emerald-50 text-emerald-700"
-                  : "bg-slate-100 text-slate-500"
-                  }`}
-              >
-                {detail.patient.is_online ? "• Online" : "• Offline"}
-              </span>
-              <span
-                className={`rounded-full px-2 py-1 text-[10px] font-semibold ${detail.patient.is_online
-                  ? "text-emerald-50 bg-emerald-700"
-                  : "text-slate-100 bg-slate-500"
-                  }`}
-              >
-                67%
-              </span>
-            </div>
-          </div>
+        <div className="flex flex-col gap-1 p-4">
+          {detail.todayTasks.map((t) => (
+            <TimelineRow key={t.id} task={t} />
+          ))}
         </div>
 
 
@@ -357,6 +473,7 @@ function MultiDashboard({
   nurseId,
   nurseName,
   onOpenCall,
+  onReloadHelp,
   navigate,
 }: {
   patients: PatientListItem[];
@@ -364,6 +481,7 @@ function MultiDashboard({
   nurseId: number;
   nurseName: string;
   onOpenCall: (h: HelpRequestItem) => void;
+  onReloadHelp: () => void;
   navigate: (p: string) => void;
 }) {
   const [selectedId, setSelectedId] = useState(patients[0].id);
@@ -378,6 +496,10 @@ function MultiDashboard({
 
   const activeCalls = helpRequests.filter(
     (h) => h.status === "PENDING" || h.status === "ACKNOWLEDGED"
+  );
+
+  const missedCalls = helpRequests.filter(
+    (h) => h.status === "EXPIRED"
   );
 
   const onlineCount = patients.filter((p) => p.is_online).length;
@@ -460,6 +582,78 @@ function MultiDashboard({
         </div>
       </section>
 
+      {/* MISSED CALLS (PANGGILAN TERLEWAT) */}
+      {missedCalls.length > 0 && (
+        <section>
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="flex items-center gap-2 text-sm font-bold text-rose-800">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75"></span>
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-rose-500"></span>
+              </span>
+              Panggilan Terlewat (Missed Call)
+            </h2>
+            <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-700">
+              {missedCalls.length} Panggilan
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            {missedCalls.map((h) => (
+              <div
+                key={h.id}
+                className="relative rounded-2xl border border-rose-200 bg-rose-50/70 p-4"
+              >
+                <div className="mb-2 flex items-center gap-3">
+                  <Avatar name={h.patient_name} />
+                  <div className="min-w-0">
+                    <h3 className="truncate text-sm font-bold text-slate-800">
+                      {h.patient_name}
+                    </h3>
+                    <p className="text-xs font-medium text-rose-600">
+                      Panggilan tidak terjawab (10 detik)
+                    </p>
+                  </div>
+                </div>
+
+                {h.patient_speech_transcript && (
+                  <div className="mb-3 rounded-xl border border-rose-100 bg-white p-2.5 text-xs text-slate-700">
+                    <p className="mb-0.5 text-[10px] font-bold tracking-wide text-rose-600">
+                      PESAN PASIEN
+                    </p>
+                    "{h.patient_speech_transcript}"
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <button
+                    className={`flex-1 ${approveButtonClass}`}
+                    onClick={async () => {
+                      await api.resolveHelp(h.id);
+                      onReloadHelp();
+                    }}
+                  >
+                    ✓ Tandai Selesai
+                  </button>
+                  <button
+                    className={`flex-1 ${navyButtonClass}`}
+                    onClick={() => navigate(`/keluarga/${h.patient_id}`)}
+                  >
+                    Cek Pasien
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ACTIVE HELP REQUESTS */}
+      {activeCalls.length > 0 && (
+        <section>
+          <h2 className="mb-2 text-sm font-bold text-slate-800">
+            Panggilan Menunggu Respons
+          </h2>
 
     {/* --- PANGGILAN MENUNGGU RESPON (URGENT) --- */}
     {activeCalls.length > 0 && (
