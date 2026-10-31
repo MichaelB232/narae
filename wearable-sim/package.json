@@ -1,0 +1,5 @@
+{
+  "name": "wearable-sim",
+  "private": true,
+  "scripts": { "start": "npx serve ." }
+}
