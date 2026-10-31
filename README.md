@@ -1,6 +1,6 @@
 # NARAE
 
-**Smart Caregiver & Wearable Companion** — asisten suara berbasis AI untuk lansia dan perawat yang mendampinginya.
+**AI-Powered Wearable & Caregiver Companion** — a voice-first care system connecting elderly individuals with their caregivers.
 
 [![Node.js](https://img.shields.io/badge/Node.js-20-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org)
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)](https://react.dev)
