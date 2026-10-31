@@ -228,13 +228,8 @@ export function DetailKeluargaPage() {
         </div>
 
         {/* Segmented Tabs */}
-<<<<<<< HEAD
         <div className="my-3.5 flex gap-0.5 rounded-xl bg-white p-2 border border-line">
           {(["aktivitas", "inventori", "riwayat"] as const).map((t) => (
-=======
-        <div className={`p-2 flex ${cardClass}`}>
-          {(["aktivitas", "inventori"] as const).map((t) => (
->>>>>>> 3816dce372248269538624384509540989743b39
             <button
               key={t}
               type="button"
