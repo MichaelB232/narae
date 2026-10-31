@@ -5,12 +5,12 @@ export const patientService = {
   listAll: () => patientRepository.findAll(),
 
   async getDetail(patientId: number) {
-    const [patient, todayTasks, belongings] = await Promise.all([
+    const [patient, todayTasks, belongingsSummary] = await Promise.all([
       patientRepository.findById(patientId),
       patientRepository.findTodayTasks(patientId),
-      patientRepository.findBelongings(patientId),
+      patientRepository.findBelongingsSummary(patientId),
     ]);
     if (!patient) return null;
-    return { patient, todayTasks, belongings };
+    return { patient, todayTasks, belongingsSummary };
   },
 };

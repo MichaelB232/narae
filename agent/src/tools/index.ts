@@ -1,6 +1,7 @@
 import type { Tool } from "./types.js";
 import { getTodayTasksTool } from "./getTodayTasks.tool.js";
 import { getBelongingsTool } from "./getBelongings.tool.js";
+import { getBelongingsSummaryTool } from "./getBelongings.tool.js";
 import { getCurrentDateTimeTool } from "./getCurrentDateTime.tool.js";
 import { requestNurseCallTool } from "./requestNurseCall.tool.js";
 import { reportTaskCompleteTool } from "./reportTaskComplete.tool.js";
@@ -12,6 +13,7 @@ export const allTools: Tool[] = [
   getCurrentDateTimeTool,
   requestNurseCallTool,
   reportTaskCompleteTool,
+  getBelongingsSummaryTool,
 ];
 
 export const toolsByName: Record<string, Tool> = Object.fromEntries(allTools.map((t) => [t.name, t]));
