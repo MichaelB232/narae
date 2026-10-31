@@ -1,6 +1,6 @@
 import { SchemaType, type Tool, type ToolExecContext } from "./types.js";
 
-// Fungsi: mencari lokasi terakhir barang milik pasien yang sudah tercatat oleh perawat. (Summary)
+// Mencari lokasi terakhir barang milik pasien yang sudah tercatat oleh perawat. (Summary)
 export const getBelongingsSummaryTool: Tool = {
   name: "get_belongings_summary",
   oneLineDescription: "Mencari lokasi terakhir dan lokasi biasa/default barang milik pasien yang tercatat.",

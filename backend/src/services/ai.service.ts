@@ -4,18 +4,19 @@ import { aiLogRepository } from "../repositories/aiLog.repository.js";
 import { helpRequestRepository } from "../repositories/helpRequest.repository.js";
 import { taskService } from "./task.service.js";
 import { env } from "../config/env.js";
+import { userRepository } from "../repositories/user.repository.js";
 
-// Ini DataProvider yang disuntikkan ke agent/ — agent package sendiri tidak tahu apa-apa
-// soal Postgres, cuma tahu interface ini. Query-nya SAMA PERSIS dengan yang dipakai
-// dashboard untuk "jadwal hari ini" (patientRepository.findTodayTasks), jadi jawaban AI
-// dan tampilan dashboard tidak akan pernah berbeda.
+
 const dataProvider: AgentDataProvider = {
-  async getTodayTasks(patientId: number) {
-    const tasks = await patientRepository.findTodayTasks(patientId);
+  async getPatientTasks(patientId: number) {
+    const tasks = await patientRepository.findActiveTasks(patientId);
     return tasks.map((t) => ({
       task_name: t.task_name,
-      scheduled_time: t.scheduled_time,
+      scheduled_time: t.scheduled_time.slice(0, 5),
+      duration_minutes: t.duration_minutes,
       status: t.status,
+      type: t.type,
+      scheduled_date: t.scheduled_date ? t.scheduled_date.slice(0, 10) : null,
     }));
   },
   async getBelongingsSummary(patientId: number) {
@@ -63,10 +64,20 @@ export const aiService = {
       err.status = 404;
       throw err;
     }
-
+    if (!patient.assigned_nurse_id) {
+      const err: any = new Error("Pasien ini tidak memiliki caregiver");
+      err.status = 404;
+      throw err;
+    }
+    const caregiver = await userRepository.findById(patient.assigned_nurse_id);
+    if (!caregiver) {
+      const err: any = new Error("Caregiver tidak ditemukan");
+      err.status = 404;
+      throw err;
+    }
     const result = await agentConverse(
       {
-        patient: { id: patient.id, name: patient.name, clinical_notes: patient.clinical_notes },
+        patient: { id: patient.id, name: patient.name, clinical_notes: patient.clinical_notes, caregiver_name: caregiver.full_name },
         transcript: params.transcript,
       },
       dataProvider,

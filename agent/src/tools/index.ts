@@ -1,5 +1,5 @@
 import type { Tool } from "./types.js";
-import { getTodayTasksTool } from "./getTodayTasks.tool.js";
+import { getPatientTasksTool } from "./getPatientTasks.tool.js";
 import { getBelongingsTool } from "./getBelongings.tool.js";
 import { getBelongingsSummaryTool } from "./getBelongings.tool.js";
 import { getCurrentDateTimeTool } from "./getCurrentDateTime.tool.js";
@@ -8,7 +8,7 @@ import { reportTaskCompleteTool } from "./reportTaskComplete.tool.js";
 
 // Tambah tool baru = tambah 1 file di folder ini + daftarkan di sini. Tidak ada tempat lain yang perlu diubah.
 export const allTools: Tool[] = [
-  getTodayTasksTool,
+  getPatientTasksTool,
   getBelongingsTool,
   getCurrentDateTimeTool,
   requestNurseCallTool,
