@@ -25,6 +25,18 @@ export const api = {
       body: JSON.stringify({ username, password }),
     }),
 
+  generateDemo: (mode: "single" | "multiple" = "single") =>
+    request<{ user: any; token: string; password?: string; mode: string }>("/demo/generate", {
+      method: "POST",
+      body: JSON.stringify({ mode }),
+    }),
+
+  resetDemo: (userId: number) =>
+    request<{ success: boolean; message: string }>("/demo/reset", {
+      method: "POST",
+      body: JSON.stringify({ userId }),
+    }),
+
   patientsForNurse: (nurseId: number) =>
     request<any[]>(`/patients?nurseId=${nurseId}`),
   patientDetail: (id: number) => request<any>(`/patients/${id}`),
