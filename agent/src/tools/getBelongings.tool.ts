@@ -5,7 +5,7 @@ export const getBelongingsSummaryTool: Tool = {
   name: "get_belongings_summary",
   oneLineDescription: "Mencari lokasi terakhir dan lokasi biasa/default barang milik pasien yang tercatat.",
   declaration: {
-    name: "get_belongings_sumary",
+    name: "get_belongings_summary",
     description:
       "Ambil daftar barang pasien beserta lokasi terakhirnya dan tempat biasanya ditaruh (default_location). " +
       "Panggil ini kalau pasien bertanya 'dimana [barang] saya?'. " +
