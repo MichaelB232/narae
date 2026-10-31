@@ -8,6 +8,7 @@ export type {
   ConverseResult,
   PatientIdentity,
   TaskSummary,
+  BelongingsPatient,
   BelongingSummary,
 } from "./types.js";
 export type { AgentOptions } from "./agent.js";

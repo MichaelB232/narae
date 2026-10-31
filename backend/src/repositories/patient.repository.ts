@@ -72,6 +72,14 @@ export const patientRepository = {
 
   async findBelongings(patientId: number): Promise<PatientBelonging[]> {
     const { rows } = await pool.query<PatientBelonging>(
+      `SELECT item_name FROM patient_belongings WHERE patient_id = $1 ORDER BY item_name`,
+      [patientId]
+    );
+    return rows;
+  },
+
+  async findBelongingsSummary(patientId: number): Promise<PatientBelonging[]> {
+    const { rows } = await pool.query<PatientBelonging>(
       `SELECT * FROM patient_belongings WHERE patient_id = $1 ORDER BY item_name`,
       [patientId]
     );

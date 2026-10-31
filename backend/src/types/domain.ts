@@ -58,6 +58,7 @@ export interface PatientBelonging {
   updated_at: string;
 }
 
+
 export interface PatientTask {
   id: number;
   patient_id: number;
