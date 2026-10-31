@@ -61,6 +61,22 @@ const dataProvider: AgentDataProvider = {
       };
     }
 
+    if (matched.status === "CONFIRMED_BY_NURSE") {
+      return {
+        success: false,
+        taskName: matched.task_name,
+        message: `Tugas '${matched.task_name}' sudah dikonfirmasi selesai oleh perawat sebelumnya. Sampaikan dengan ramah bahwa perawat sudah mencatatnya selesai sehingga pasien tidak perlu khawatir lagi.`,
+      };
+    }
+
+    if (matched.status === "REPORTED_COMPLETE_BY_PATIENT") {
+      return {
+        success: false,
+        taskName: matched.task_name,
+        message: `Tugas '${matched.task_name}' sudah dilaporkan selesai sebelumnya dan saat ini sedang menunggu persetujuan perawat.`,
+      };
+    }
+
     await taskService.reportCompleteByPatient(matched.id);
     return {
       success: true,
