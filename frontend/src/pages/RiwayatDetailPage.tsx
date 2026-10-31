@@ -4,6 +4,7 @@ import { api } from "../api/client";
 import { useAuth } from "../auth";
 import { PhoneLayout } from "../components/PhoneLayout";
 import { Avatar } from "../components/Avatar";
+import { BackButton } from "../components/BackButton";
 import { requestStatusMeta } from "../statusLabels";
 import { calcAge } from "../utils";
 import type { AiLogItem, HelpRequestItem, PatientDetail } from "../types";
@@ -68,14 +69,7 @@ export function RiwayatDetailPage() {
         <PhoneLayout>
             <div className="min-h-full p-4 pt-[64px] bg-linear-to-br from-[#EAF1F5] to-[#FAF7F0]">
                 <div className="mb-3.5 flex items-center gap-2.5">
-                    <button
-                        type="button"
-                        onClick={() => navigate(-1)}
-                        className="flex size-[32px] cursor-pointer items-center justify-center rounded-full bg-none border-[0.5px] text-black transition active:scale-95"
-                        aria-label="Kembali"
-                    >
-                        ‹
-                    </button>
+                    <BackButton onClick={() => navigate(-1)} />
                     <div>
                         <h1 className="m-0 text-lg font-bold text-ink">Riwayat</h1>
                         <p className="m-0 text-[13px] text-mute">Interaksi AI dan pemanggilan pasien</p>
