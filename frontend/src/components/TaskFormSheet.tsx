@@ -238,46 +238,23 @@ export function TaskFormSheet({
   if (step === "verify") {
     return (
       <BottomSheet open={open} onClose={handleClose}>
-        <h2>Cek AI Voice</h2>
-        <p className="sheet-sub">Pastikan suara AI sesuai dengan aktivitas</p>
+        <h2 className="m-0 mb-0.5 text-lg font-bold text-ink">Cek AI Voice</h2>
+        <p className="m-0 mb-4 text-[12.5px] text-mute">Pastikan suara AI sesuai dengan aktivitas</p>
 
         {/* Audio Player Card */}
-        <div
-          style={{
-            background: "#edf3f6",
-            borderRadius: 14,
-            padding: "14px 16px",
-            display: "flex",
-            alignItems: "center",
-            gap: 14,
-            marginBottom: 20,
-            border: "1px solid #dbe6ec",
-          }}
-        >
+        <div className="mb-5 flex items-center gap-3.5 rounded-2xl border border-[#dbe6ec] bg-[#edf3f6] p-3.5 px-4">
           <button
+            type="button"
             onClick={toggleAudioPreview}
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: 10,
-              background: "#3e627c",
-              color: "#fff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-              fontSize: 18,
-              boxShadow: "0 2px 6px rgba(62, 98, 124, 0.3)",
-              cursor: "pointer",
-            }}
+            className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-xl bg-navy text-lg text-white shadow-[0_2px_6px_rgba(62,98,124,0.3)] transition hover:opacity-90 active:scale-95"
           >
             {isPlaying ? "⏸" : "▶"}
           </button>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 700, fontSize: 16, color: "#1c2b38" }}>
+          <div className="flex-1 min-w-0">
+            <div className="truncate text-base font-bold text-[#1c2b38]">
               {taskName || "Nama Aktivitas"}
             </div>
-            <div style={{ fontSize: 13, color: "#607282", marginTop: 2 }}>
+            <div className="mt-0.5 text-[13px] text-mute">
               {isPlaying
                 ? `0:${String(playSeconds).padStart(2, "0")}`
                 : "0:30"}
@@ -286,60 +263,60 @@ export function TaskFormSheet({
         </div>
 
         {/* Summary Info */}
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#22262b" }}>
+        <div className="mb-5">
+          <div className="mb-3">
+            <div className="text-[13px] font-bold text-ink">
               Nama Aktivitas
             </div>
-            <div style={{ fontSize: 15, color: "#6b7280", marginTop: 2 }}>
+            <div className="mt-0.5 text-[15px] text-mute">
               {taskName}
             </div>
           </div>
 
-          <div className="field-row" style={{ marginBottom: 12 }}>
-            <div className="field" style={{ margin: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#22262b" }}>
+          <div className="mb-3 flex gap-2.5">
+            <div className="flex-1">
+              <div className="text-[13px] font-bold text-ink">
                 Berulang
               </div>
-              <div style={{ fontSize: 15, color: "#6b7280", marginTop: 2 }}>
+              <div className="mt-0.5 text-[15px] text-mute">
                 {recurring ? "Ya" : "Tidak"}
               </div>
             </div>
-            <div className="field" style={{ margin: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#22262b" }}>
+            <div className="flex-1">
+              <div className="text-[13px] font-bold text-ink">
                 Jadwal
               </div>
-              <div style={{ fontSize: 15, color: "#6b7280", marginTop: 2 }}>
+              <div className="mt-0.5 text-[15px] text-mute">
                 {dayDisplay}
               </div>
             </div>
           </div>
 
-          <div className="field-row" style={{ marginBottom: 12 }}>
-            <div className="field" style={{ margin: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#22262b" }}>
+          <div className="mb-3 flex gap-2.5">
+            <div className="flex-1">
+              <div className="text-[13px] font-bold text-ink">
                 Jam Mulai
               </div>
-              <div style={{ fontSize: 15, color: "#6b7280", marginTop: 2 }}>
+              <div className="mt-0.5 text-[15px] text-mute">
                 {time} WIB
               </div>
             </div>
-            <div className="field" style={{ margin: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#22262b" }}>
+            <div className="flex-1">
+              <div className="text-[13px] font-bold text-ink">
                 Durasi
               </div>
-              <div style={{ fontSize: 15, color: "#6b7280", marginTop: 2 }}>
+              <div className="mt-0.5 text-[15px] text-mute">
                 {duration} Menit
               </div>
             </div>
           </div>
 
           {isEdit && (
-            <div style={{ marginTop: 8 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#22262b" }}>
+            <div className="mt-2">
+              <div className="text-[13px] font-bold text-ink">
                 Status Tugas
               </div>
-              <div style={{ fontSize: 14, color: isActive ? "var(--sage)" : "var(--rose)", fontWeight: 600, marginTop: 2 }}>
+              <div className={`mt-0.5 text-sm font-semibold ${isActive ? "text-sage" : "text-alert"}`}>
                 {isActive ? "● Aktif Dijalankan" : "○ Dinonaktifkan Sementara"}
               </div>
             </div>
@@ -347,24 +324,24 @@ export function TaskFormSheet({
         </div>
 
         {/* Action Buttons */}
-        <div style={{ marginTop: 24 }}>
+        <div className="mt-6">
           <button
-            className="btn sage"
+            type="button"
+            className="w-full cursor-pointer rounded-full bg-sage py-3.25 px-4 text-center text-sm font-bold text-white transition hover:opacity-90 active:scale-[0.99] disabled:opacity-50"
             disabled={saving}
             onClick={handleFinalSave}
-            style={{ width: "100%", padding: 13, fontSize: 14, fontWeight: 700 }}
           >
             {saving ? "Menyimpan…" : "Simpan Aktivitas"}
           </button>
         </div>
-        <div style={{ marginTop: 8 }}>
+        <div className="mt-2">
           <button
-            className="btn ghost"
+            type="button"
+            className="w-full cursor-pointer rounded-full bg-surface-sunken py-3 px-4 text-center text-sm font-bold text-ink transition hover:opacity-90 active:scale-[0.99]"
             onClick={() => {
               stopPlayback();
               setStep("form");
             }}
-            style={{ width: "100%", padding: 12, fontSize: 14 }}
           >
             Kembali
           </button>
@@ -377,8 +354,8 @@ export function TaskFormSheet({
   return (
     <>
       <BottomSheet open={open} onClose={handleClose}>
-        <h2>{isEdit ? "Edit Aktivitas" : "Buat Aktivitas"}</h2>
-        <p className="sheet-sub">
+        <h2 className="m-0 mb-0.5 text-lg font-bold text-ink">{isEdit ? "Edit Aktivitas" : "Buat Aktivitas"}</h2>
+        <p className="m-0 mb-4 text-[12.5px] text-mute">
           {isEdit
             ? "Edit rincian tugas dan jadwal untuk anggota keluarga"
             : "Tambahkan aktivitas untuk anggota keluarga"}
@@ -387,38 +364,28 @@ export function TaskFormSheet({
         {/* Switch Status Aktif / Nonaktif jika Mode Edit */}
         {isEdit && (
           <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              background: isActive ? "var(--sage-soft)" : "var(--rose-soft)",
-              padding: "10px 14px",
-              borderRadius: 12,
-              marginBottom: 16,
-              border: `1px solid ${isActive ? "rgba(47,111,84,0.2)" : "rgba(198,83,83,0.2)"}`,
-            }}
+            className={`mb-4 flex items-center justify-between rounded-xl p-3 px-3.5 border ${
+              isActive
+                ? "border-sage/20 bg-sage-soft"
+                : "border-alert/20 bg-alert-soft"
+            }`}
           >
             <div>
-              <div style={{ fontWeight: 700, fontSize: 13.5, color: isActive ? "var(--sage)" : "var(--rose)" }}>
+              <div className={`text-[13.5px] font-bold ${isActive ? "text-sage" : "text-alert"}`}>
                 {isActive ? "Tugas Aktif" : "Tugas Dinonaktifkan"}
               </div>
-              <div className="mut" style={{ fontSize: 11.5 }}>
+              <div className="text-[11.5px] text-mute">
                 {isActive ? "Pengingat suara akan berjalan sesuai jadwal" : "Pengingat suara ditangguhkan sementara"}
               </div>
             </div>
             <button
               type="button"
               onClick={() => setIsActive(!isActive)}
-              style={{
-                padding: "6px 14px",
-                borderRadius: 999,
-                fontSize: 12,
-                fontWeight: 700,
-                background: isActive ? "var(--sage)" : "#fff",
-                color: isActive ? "#fff" : "var(--rose)",
-                border: isActive ? "none" : "1px solid var(--rose)",
-                cursor: "pointer",
-              }}
+              className={`cursor-pointer rounded-full px-3.5 py-1.5 text-xs font-bold transition active:scale-95 ${
+                isActive
+                  ? "bg-sage text-white"
+                  : "border border-alert bg-white text-alert"
+              }`}
             >
               {isActive ? "Aktif" : "Nonaktif"}
             </button>
@@ -426,49 +393,44 @@ export function TaskFormSheet({
         )}
 
         {/* Field: Nama Aktivitas */}
-        <div className="field">
-          <label>Nama Aktivitas</label>
+        <div className="mb-3.5">
+          <label className="mb-1.5 block text-[12.5px] font-bold text-ink">Nama Aktivitas</label>
           <input
             value={taskName}
             onChange={(e) => setTaskName(e.target.value)}
             placeholder="Ex. Makan Siang / Kontrol Dokter"
+            className="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-[13.5px] text-ink focus:border-navy focus:outline-none"
           />
         </div>
 
         {/* Tipe Aktivitas: Berulang atau Sekali Saja */}
-        <div className="field-row">
-          <div className="field">
-            <label>Tipe Aktivitas</label>
+        <div className="mb-3.5 flex gap-2.5">
+          <div className="flex-1">
+            <label className="mb-1.5 block text-[12.5px] font-bold text-ink">Tipe Aktivitas</label>
             <select
               value={recurring ? "ya" : "tidak"}
               onChange={(e) => setRecurring(e.target.value === "ya")}
+              className="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-[13.5px] text-ink focus:border-navy focus:outline-none"
             >
               <option value="ya">Berulang</option>
               <option value="tidak">Sekali Saja (Appointment)</option>
             </select>
           </div>
-          <div className="field">
-            <label>{recurring ? "Pilih Hari" : "Waktu Pelaksanaan"}</label>
+          <div className="flex-1">
+            <label className="mb-1.5 block text-[12.5px] font-bold text-ink">
+              {recurring ? "Pilih Hari" : "Waktu Pelaksanaan"}
+            </label>
             {recurring ? (
-              <div
-                className="day-picker"
-                style={{ display: "flex", gap: 4, flexWrap: "wrap" }}
-              >
+              <div className="flex flex-wrap gap-1">
                 {DAYS.map((d) => (
                   <button
                     key={d.value}
                     type="button"
-                    className="day-chip"
-                    style={{
-                      padding: "6px 8px",
-                      borderRadius: 999,
-                      fontSize: 11,
-                      border: "1px solid var(--line)",
-                      background: days.includes(d.value)
-                        ? "var(--navy)"
-                        : "var(--surface-sunken)",
-                      color: days.includes(d.value) ? "#fff" : "var(--text)",
-                    }}
+                    className={`cursor-pointer rounded-full border px-2 py-1 text-[11px] font-semibold transition active:scale-95 ${
+                      days.includes(d.value)
+                        ? "border-navy bg-navy text-white"
+                        : "border-line bg-surface-sunken text-ink"
+                    }`}
                     onClick={() =>
                       setDays((p) =>
                         p.includes(d.value)
@@ -487,32 +449,25 @@ export function TaskFormSheet({
                 value={targetDate}
                 min={isEdit && existing?.scheduled_date && existing.scheduled_date.slice(0, 10) < todayStr ? existing.scheduled_date.slice(0, 10) : todayStr}
                 onChange={(e) => setTargetDate(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "9px 12px",
-                  borderRadius: 8,
-                  border: "1px solid var(--line)",
-                  fontSize: 13.5,
-                  color: "var(--text)",
-                  background: "var(--surface)",
-                }}
+                className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-[13.5px] text-ink focus:border-navy focus:outline-none"
               />
             )}
           </div>
         </div>
 
         {/* Jam Mulai & Durasi */}
-        <div className="field-row">
-          <div className="field">
-            <label>Jam Mulai (WIB)</label>
+        <div className="mb-3.5 flex gap-2.5">
+          <div className="flex-1">
+            <label className="mb-1.5 block text-[12.5px] font-bold text-ink">Jam Mulai (WIB)</label>
             <input
               type="time"
               value={time}
               onChange={(e) => setTime(e.target.value)}
+              className="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-[13.5px] text-ink focus:border-navy focus:outline-none"
             />
           </div>
-          <div className="field">
-            <label>Durasi</label>
+          <div className="flex-1">
+            <label className="mb-1.5 block text-[12.5px] font-bold text-ink">Durasi</label>
             <input
               type="text"
               value={`${duration} Menit`}
@@ -521,50 +476,41 @@ export function TaskFormSheet({
                 if (!isNaN(num)) setDuration(num);
               }}
               placeholder="15 Menit"
+              className="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-[13.5px] text-ink focus:border-navy focus:outline-none"
             />
           </div>
         </div>
 
         {/* Warning Waktu Lampau (WIB) hanya jika tugas untuk Hari Ini */}
         {timeInPast && (
-          <div
-            style={{
-              background: "var(--rose-soft)",
-              color: "var(--rose)",
-              padding: "8px 12px",
-              borderRadius: 8,
-              fontSize: 12.5,
-              marginBottom: 12,
-              border: "1px solid rgba(198, 83, 83, 0.2)",
-            }}
-          >
+          <div className="mb-3.5 rounded-lg border border-alert/20 bg-alert-soft p-2.5 text-[12.5px] text-alert">
             ⚠️ Jam {time} sudah terlewat dari waktu saat ini di WIB ({getWibTimeHHMM()}). Silakan pilih jam yang belum berlalu.
           </div>
         )}
 
         {/* Action Buttons */}
-        <div style={{ marginTop: 20 }}>
+        <div className="mt-5">
           <button
-            className="btn navy"
+            type="button"
+            className="w-full cursor-pointer rounded-full bg-navy py-3.25 px-4 text-center text-sm font-bold text-white transition hover:opacity-90 active:scale-[0.99] disabled:opacity-50"
             disabled={!taskName.trim() || timeInPast}
             onClick={checkConflictAndProceed}
-            style={{ width: "100%", padding: 13, fontSize: 14, fontWeight: 700 }}
           >
             Lanjutkan
           </button>
         </div>
-        <div style={{ marginTop: 8 }}>
+        <div className="mt-2">
           <button
-            className="btn ghost"
+            type="button"
+            className="w-full cursor-pointer rounded-full bg-surface-sunken py-3 px-4 text-center text-sm font-bold text-ink transition hover:opacity-90 active:scale-[0.99]"
             onClick={handleClose}
-            style={{ width: "100%", padding: 12, fontSize: 14 }}
           >
             Batal
           </button>
         </div>
       </BottomSheet>
 
-      {/* POPUP JADWAL BERTABRAKAN (Bottom Sheet Sesuai Desain Figma) */}
+      {/* POPUP JADWAL BERTABRAKAN */}
       <TaskConflictSheet
         open={Boolean(conflictTask)}
         onClose={() => setConflictTask(null)}

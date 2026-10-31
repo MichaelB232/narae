@@ -4,19 +4,21 @@ import { api } from "../api/client";
 import { useAuth } from "../auth";
 import { PhoneLayout } from "../components/PhoneLayout";
 import { Avatar } from "../components/Avatar";
-import { SuccessToast } from "../components/Toast";
 import { TaskFormSheet } from "../components/TaskFormSheet";
 import { TaskStatusSheet } from "../components/TaskStatusSheet";
 import { BelongingFormSheet } from "../components/BelongingFormSheet";
 import { ConfirmSheet } from "../components/ConfirmSheet";
-import { taskStatusMeta, DAY_LABELS_SHORT } from "../statusLabels";
+import { SuccessToast } from "../components/Toast";
+import { taskStatusMeta } from "../statusLabels";
 import { calcAge, hhmm, addMinutes } from "../utils";
 import type { PatientDetail, TaskItem, Belonging, AiLogItem } from "../types";
 
-type Tab = "aktivitas" | "inventori" | "riwayat";
+const DAY_LABELS_SHORT: Record<number, string> = {
+  1: "Sen", 2: "Sel", 3: "Rab", 4: "Kam", 5: "Jum", 6: "Sab", 7: "Min",
+};
 
 export function DetailKeluargaPage() {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const patientId = Number(id);
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -25,30 +27,53 @@ export function DetailKeluargaPage() {
   const [allTasks, setAllTasks] = useState<TaskItem[]>([]);
   const [belongings, setBelongings] = useState<Belonging[]>([]);
   const [aiLogs, setAiLogs] = useState<AiLogItem[]>([]);
-  const [tab, setTab] = useState<Tab>("aktivitas");
-  const [toast, setToast] = useState<{ title: string; subtitle: string } | null>(null);
 
+  const [tab, setTab] = useState<"aktivitas" | "inventori" | "riwayat">("aktivitas");
   const [scheduleFilter, setScheduleFilter] = useState<"harian" | "berulang">("harian");
+
   const [taskSheet, setTaskSheet] = useState<{ open: boolean; existing?: TaskItem }>({ open: false });
   const [statusSheet, setStatusSheet] = useState<{ open: boolean; task: TaskItem | null }>({ open: false, task: null });
   const [belongingSheet, setBelongingSheet] = useState<{ open: boolean; existing?: Belonging }>({ open: false });
   const [deleteTask, setDeleteTask] = useState<TaskItem | null>(null);
   const [deleteBelonging, setDeleteBelonging] = useState<Belonging | null>(null);
 
-  const loadDetail = useCallback(async () => setDetail(await api.patientDetail(patientId)), [patientId]);
-  const loadAllTasks = useCallback(async () => setAllTasks(await api.tasksForPatient(patientId)), [patientId]);
-  const loadBelongings = useCallback(async () => setBelongings(await api.belongings(patientId)), [patientId]);
-  const loadAiLogs = useCallback(async () => setAiLogs(await api.aiHistory(patientId)), [patientId]);
-
-  useEffect(() => { loadDetail(); loadAllTasks(); loadBelongings(); }, [loadDetail, loadAllTasks, loadBelongings]);
-  useEffect(() => { if (tab === "riwayat") loadAiLogs(); }, [tab, loadAiLogs]);
+  const [toast, setToast] = useState<{ title: string; subtitle: string } | null>(null);
 
   function showToast(title: string, subtitle: string) {
     setToast({ title, subtitle });
-    setTimeout(() => setToast(null), 3200);
+    setTimeout(() => setToast(null), 3000);
   }
 
-  if (!detail) return <PhoneLayout><p className="mut" style={{ padding: 20 }}>Memuat…</p></PhoneLayout>;
+  const loadDetail = useCallback(async () => {
+    setDetail(await api.patientDetail(patientId));
+  }, [patientId]);
+
+  const loadAllTasks = useCallback(async () => {
+    setAllTasks(await api.tasksForPatient(patientId));
+  }, [patientId]);
+
+  const loadBelongings = useCallback(async () => {
+    setBelongings(await api.belongings(patientId));
+  }, [patientId]);
+
+  const loadAiLogs = useCallback(async () => {
+    setAiLogs(await api.aiHistory(patientId));
+  }, [patientId]);
+
+  useEffect(() => {
+    loadDetail();
+    loadAllTasks();
+    loadBelongings();
+    loadAiLogs();
+  }, [loadDetail, loadAllTasks, loadBelongings, loadAiLogs]);
+
+  if (!detail) {
+    return (
+      <PhoneLayout>
+        <p className="p-5 text-[13px] text-mute">Memuat…</p>
+      </PhoneLayout>
+    );
+  }
 
   const age = calcAge(detail.patient.date_of_birth);
   const doneToday = detail.todayTasks.filter((t) => t.status === "CONFIRMED_BY_NURSE").length;
@@ -66,7 +91,9 @@ export function DetailKeluargaPage() {
   }
 
   const scheduleTasks = allTasks.filter((t) =>
-    scheduleFilter === "harian" ? t.type === "RECURRING" && (!t.days_of_week || t.days_of_week.length === 0) : (t.days_of_week && t.days_of_week.length > 0) || t.type === "ONE_TIME"
+    scheduleFilter === "harian"
+      ? t.type === "RECURRING" && (!t.days_of_week || t.days_of_week.length === 0)
+      : (t.days_of_week && t.days_of_week.length > 0) || t.type === "ONE_TIME"
   );
 
   function scheduleLine(t: TaskItem) {
@@ -85,65 +112,96 @@ export function DetailKeluargaPage() {
     <PhoneLayout>
       {toast && <SuccessToast title={toast.title} subtitle={toast.subtitle} />}
 
-      <div className="block" style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <button onClick={() => navigate(-1)} style={{ width: 30, height: 30, borderRadius: "50%", background: "var(--surface-sunken)" }}>‹</button>
+      {/* Header Back & Judul */}
+      <div className="mb-3.5 flex items-center gap-2.5">
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="flex size-[30px] cursor-pointer items-center justify-center rounded-full bg-surface-sunken text-ink transition active:scale-95"
+          aria-label="Kembali"
+        >
+          ‹
+        </button>
         <div>
-          <h1 style={{ fontSize: 18, margin: 0 }}>Detail Keluarga</h1>
-          <p className="mut" style={{ margin: 0 }}>Lihat detail anggota keluarga Anda</p>
+          <h1 className="m-0 text-lg font-bold text-ink">Detail Keluarga</h1>
+          <p className="m-0 text-[13px] text-mute">Lihat detail anggota keluarga Anda</p>
         </div>
       </div>
 
-      <div className="card block">
-        <div className="patient-mini">
+      {/* Kartu Profil Pasien */}
+      <div className="mb-3.5 rounded-2xl border border-line bg-surface p-4">
+        <div className="flex items-center gap-3">
           <Avatar name={detail.patient.name} />
-          <div style={{ flex: 1 }}>
-            <div className="name">{detail.patient.name}</div>
-            <div className="age">{age ? `${age} Tahun` : ""}</div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[15px] font-bold text-ink">{detail.patient.name}</div>
+            <div className="text-xs text-mute">{age ? `${age} Tahun` : ""}</div>
           </div>
-          <div>
-            <span className="pill online">{detail.patient.is_online ? "• Online" : "• Offline"}</span>{" "}
-            <span className="pill battery">{detail.patient.battery_percentage ?? "-"}%</span>
+          <div className="flex gap-1.5">
+            <span
+              className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                detail.patient.is_online ? "bg-sage-soft text-sage" : "bg-neutral-badge text-neutral-badge-text"
+              }`}
+            >
+              {detail.patient.is_online ? "• Online" : "• Offline"}
+            </span>
+            <span className="rounded-full bg-sage-soft px-2 py-0.5 text-[10px] font-bold text-sage">
+              {detail.patient.battery_percentage ?? "-"}%
+            </span>
           </div>
         </div>
-        <div className="mut" style={{ marginTop: 8, fontSize: 12 }}>
+        <div className="mt-2 text-xs text-mute">
           ↗ {doneToday} dari {detail.todayTasks.length} aktivitas dilakukan hari ini
         </div>
       </div>
 
-      <div className="seg-tabs">
-        <button className={tab === "aktivitas" ? "active" : ""} onClick={() => setTab("aktivitas")}>Aktivitas</button>
-        <button className={tab === "inventori" ? "active" : ""} onClick={() => setTab("inventori")}>Inventori</button>
-        <button className={tab === "riwayat" ? "active" : ""} onClick={() => setTab("riwayat")}>Riwayat</button>
+      {/* Segmented Tabs */}
+      <div className="my-3.5 flex gap-0.5 rounded-full bg-surface-sunken p-[3px]">
+        {(["aktivitas", "inventori", "riwayat"] as const).map((t) => (
+          <button
+            key={t}
+            type="button"
+            className={`flex-1 cursor-pointer rounded-full py-2 px-1 text-center text-[12.5px] capitalize transition ${
+              tab === t ? "bg-navy font-bold text-white shadow-xs" : "font-semibold text-mute hover:text-ink"
+            }`}
+            onClick={() => setTab(t)}
+          >
+            {t}
+          </button>
+        ))}
       </div>
 
+      {/* TAB AKTIVITAS */}
       {tab === "aktivitas" && (
         <>
+          {/* Menunggu Persetujuan Caregiver */}
           {pendingApprovals.length > 0 && (
-            <div className="card tint-navy block">
-              <div className="card-title">Menunggu Persetujuan Caregiver</div>
-              <div className="card-sub" style={{ marginBottom: 10 }}>
+            <div className="mb-3.5 rounded-2xl border border-[#c9d7df] bg-navy-soft p-4">
+              <div className="text-[15px] font-bold text-ink">Menunggu Persetujuan Caregiver</div>
+              <div className="mb-2.5 text-xs text-mute">
                 Pasien melapor tugas telah diselesaikan melalui Asisten AI di gelang
               </div>
               {pendingApprovals.map((t) => (
-                <div key={t.id} style={{ borderTop: "1px solid var(--line)", paddingTop: 10, marginTop: 8 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div key={t.id} className="mt-2 border-t border-line/60 pt-2.5">
+                  <div className="flex items-center justify-between">
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: 13.5 }}>{t.task_name}</div>
-                      <div className="mut" style={{ fontSize: 11.5 }}>Jadwal: {hhmm(t.scheduled_time)}</div>
+                      <div className="text-[13.5px] font-bold text-ink">{t.task_name}</div>
+                      <div className="text-[11.5px] text-mute">Jadwal: {hhmm(t.scheduled_time)}</div>
                     </div>
-                    <span className="status-badge navy">Laporan AI</span>
+                    <span className="rounded-full bg-navy-soft px-2.5 py-1 text-[11px] font-bold text-navy">
+                      Laporan AI
+                    </span>
                   </div>
-                  <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                  <div className="mt-2.5 flex gap-2">
                     <button
-                      className="btn sage"
-                      style={{ flex: 1, padding: "8px 12px", fontSize: 13 }}
+                      type="button"
+                      className="flex-1 cursor-pointer rounded-full bg-sage py-2 px-3 text-center text-[13px] font-bold text-white transition hover:opacity-90 active:scale-[0.99]"
                       onClick={() => handleConfirmTask(t.id, true)}
                     >
                       ✓ Setujui Selesai
                     </button>
                     <button
-                      className="btn ghost"
-                      style={{ flex: 1, padding: "8px 12px", fontSize: 13, color: "var(--rose)", border: "1px solid var(--line)" }}
+                      type="button"
+                      className="flex-1 cursor-pointer rounded-full border border-line bg-surface py-2 px-3 text-center text-[13px] font-bold text-alert transition hover:bg-alert-soft active:scale-[0.99]"
                       onClick={() => handleConfirmTask(t.id, false)}
                     >
                       ✕ Tolak
@@ -154,44 +212,61 @@ export function DetailKeluargaPage() {
             </div>
           )}
 
-          <div className="block">
-            <div className="card-title" style={{ marginBottom: 2 }}>Aktivitas Hari Ini</div>
-            <div className="card-sub" style={{ marginBottom: 10 }}>
+          {/* Aktivitas Hari Ini (Timeline) */}
+          <div className="mb-3.5">
+            <div className="mb-0.5 text-[15px] font-bold text-ink">Aktivitas Hari Ini</div>
+            <div className="mb-2.5 text-xs text-mute">
               {new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
             </div>
-            <div className="card">
-              <div className="timeline">
-                {detail.todayTasks.length === 0 && <div className="empty-state">Tidak ada jadwal hari ini.</div>}
-                {detail.todayTasks.map((t) => {
+
+            <div className="rounded-2xl border border-line bg-surface p-4">
+              <div className="relative ml-1.5">
+                {detail.todayTasks.length === 0 && (
+                  <div className="py-6.5 px-3.5 text-center text-[13px] text-mute">
+                    Tidak ada jadwal hari ini.
+                  </div>
+                )}
+                {detail.todayTasks.map((t, idx) => {
                   const meta = taskStatusMeta[t.status];
                   const isMissed = t.status === "MISSED";
+                  const isLast = idx === detail.todayTasks.length - 1;
                   return (
                     <div
                       key={t.id}
-                      className="timeline-item"
-                      style={
-                        isMissed
-                          ? {
-                              background: "var(--rose-soft)",
-                              padding: "8px 10px",
-                              borderRadius: 10,
-                              margin: "4px 0",
-                            }
-                          : {}
-                      }
+                      className={`relative flex items-start gap-3 py-2.5 ${
+                        isMissed ? "my-1 rounded-xl bg-alert-soft p-2.5" : ""
+                      }`}
                     >
-                      <span className={`dot${meta.dotMuted ? " muted" : ""}`} />
-                      <div className="body">
-                        <div className="ttitle">{t.task_name}</div>
-                        <div className="ttime">
+                      {/* Vertical line connecting timeline dots */}
+                      {!isLast && !isMissed && (
+                        <div className="absolute top-4.5 bottom-[-10px] left-1 w-px bg-line" />
+                      )}
+                      <span
+                        className={`relative z-10 mt-1.5 size-2.5 shrink-0 rounded-full ${
+                          meta.dotMuted ? "bg-[#c9cdd3]" : "bg-navy"
+                        }`}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-semibold text-ink">{t.task_name}</div>
+                        <div className="text-xs text-mute">
                           {hhmm(t.scheduled_time)} – {hhmm(addMinutes(t.scheduled_time, t.duration_minutes))} WIB
                         </div>
                       </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <span className={`status-badge ${meta.tone}`}>{meta.label}</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold whitespace-nowrap ${
+                          meta.tone === "sage"
+                            ? "bg-sage-soft text-sage"
+                            : meta.tone === "rose"
+                            ? "bg-alert-soft text-alert"
+                            : meta.tone === "navy"
+                            ? "bg-navy-soft text-navy"
+                            : "bg-neutral-badge text-neutral-badge-text"
+                        }`}>
+                          {meta.label}
+                        </span>
                         <button
-                          className="btn ghost-navy"
-                          style={{ fontSize: 11, padding: "4px 8px", borderRadius: 6, border: "1px solid var(--line)" }}
+                          type="button"
+                          className="cursor-pointer rounded-md border border-line bg-navy-soft px-2 py-1 text-[11px] font-bold text-navy transition hover:opacity-90 active:scale-95"
                           onClick={() => setStatusSheet({ open: true, task: t })}
                         >
                           Update Status
@@ -204,108 +279,178 @@ export function DetailKeluargaPage() {
             </div>
           </div>
 
-          <div className="block">
-            <div className="card-header-row" style={{ marginBottom: 2 }}>
+          {/* Edit Jadwal Keluarga */}
+          <div className="mb-3.5">
+            <div className="mb-1 flex items-start justify-between gap-2.5">
               <div>
-                <div className="card-title">Edit Jadwal Keluarga</div>
-                <div className="card-sub">Buat, ubah, dan hapus data</div>
+                <div className="text-[15px] font-bold text-ink">Edit Jadwal Keluarga</div>
+                <div className="text-xs text-mute">Buat, ubah, dan hapus data</div>
               </div>
-              <div className="toggle-pair">
-                <button className={scheduleFilter === "harian" ? "active" : ""} onClick={() => setScheduleFilter("harian")}>Harian</button>
-                <button className={scheduleFilter === "berulang" ? "active" : ""} onClick={() => setScheduleFilter("berulang")}>Berulang</button>
+              <div className="inline-flex rounded-full bg-surface-sunken p-[3px]">
+                <button
+                  type="button"
+                  className={`cursor-pointer rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                    scheduleFilter === "harian" ? "bg-navy font-bold text-white shadow-xs" : "text-mute hover:text-ink"
+                  }`}
+                  onClick={() => setScheduleFilter("harian")}
+                >
+                  Harian
+                </button>
+                <button
+                  type="button"
+                  className={`cursor-pointer rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                    scheduleFilter === "berulang" ? "bg-navy font-bold text-white shadow-xs" : "text-mute hover:text-ink"
+                  }`}
+                  onClick={() => setScheduleFilter("berulang")}
+                >
+                  Berulang
+                </button>
               </div>
             </div>
 
-            {scheduleTasks.length === 0 && <div className="empty-state">Belum ada jadwal di kategori ini.</div>}
+            {scheduleTasks.length === 0 && (
+              <div className="py-6.5 px-3.5 text-center text-[13px] text-mute">
+                Belum ada jadwal di kategori ini.
+              </div>
+            )}
             {scheduleTasks.map((t) => (
-              <div key={t.id} className="list-row" style={!t.is_active ? { opacity: 0.6 } : {}}>
-                <div className="clickable" style={{ flex: 1 }} onClick={() => setTaskSheet({ open: true, existing: t })}>
-                  <div className="rt" style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    {t.task_name}
+              <div
+                key={t.id}
+                className={`mb-2 flex items-center justify-between rounded-xl bg-surface-sunken px-3.5 py-3 text-[13px] ${
+                  !t.is_active ? "opacity-60" : ""
+                }`}
+              >
+                <div
+                  className="flex-1 min-w-0 cursor-pointer"
+                  onClick={() => setTaskSheet({ open: true, existing: t })}
+                >
+                  <div className="flex items-center gap-1.5 font-semibold text-ink">
+                    <span className="truncate">{t.task_name}</span>
                     {!t.is_active && (
-                      <span className="pill" style={{ fontSize: 10, background: "var(--rose-soft)", color: "var(--rose)" }}>
+                      <span className="rounded-full bg-alert-soft px-2 py-0.5 text-[10px] font-bold text-alert">
                         Nonaktif
                       </span>
                     )}
                   </div>
-                  <div className="rs">{scheduleLine(t)} WIB</div>
+                  <div className="text-xs text-mute">{scheduleLine(t)} WIB</div>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <div className="flex items-center gap-1.5">
                   <button
-                    className="btn ghost-navy"
-                    style={{ fontSize: 11, padding: "4px 8px", borderRadius: 6, border: "1px solid var(--line)" }}
+                    type="button"
+                    className="cursor-pointer rounded-md border border-line bg-navy-soft px-2 py-1 text-[11px] font-bold text-navy transition hover:opacity-90 active:scale-95"
                     onClick={() => setTaskSheet({ open: true, existing: t })}
                   >
                     Edit
                   </button>
                   <button
-                    className="btn ghost"
-                    style={{ fontSize: 11, padding: "4px 8px", borderRadius: 6, border: "1px solid var(--line)" }}
+                    type="button"
+                    className="cursor-pointer rounded-md border border-line bg-surface px-2 py-1 text-[11px] font-bold text-ink transition hover:opacity-90 active:scale-95"
                     onClick={() => setStatusSheet({ open: true, task: t })}
                   >
                     Status
                   </button>
-                  <button className="mut" style={{ padding: "4px 6px" }} onClick={() => setDeleteTask(t)} aria-label="Hapus">🗑</button>
+                  <button
+                    type="button"
+                    className="cursor-pointer p-1 text-xs text-mute transition hover:text-alert"
+                    onClick={() => setDeleteTask(t)}
+                    aria-label="Hapus"
+                  >
+                    🗑
+                  </button>
                 </div>
               </div>
             ))}
 
-            <button className="btn navy" style={{ marginTop: 8 }} onClick={() => setTaskSheet({ open: true })}>Tambah</button>
+            <button
+              type="button"
+              className="mt-2 w-full cursor-pointer rounded-full bg-navy py-3 px-4 text-center text-sm font-bold text-white transition hover:opacity-90 active:scale-[0.99]"
+              onClick={() => setTaskSheet({ open: true })}
+            >
+              Tambah
+            </button>
           </div>
         </>
       )}
 
+      {/* TAB INVENTORI */}
       {tab === "inventori" && (
-        <div className="block">
-          <div className="card-title">Daftar Inventori Keluarga</div>
-          <div className="card-sub" style={{ marginBottom: 10 }}>Koordinasi barang milik keluarga</div>
+        <div className="mb-3.5">
+          <div className="text-[15px] font-bold text-ink">Daftar Inventori Keluarga</div>
+          <div className="mb-2.5 text-xs text-mute">Koordinasi barang milik keluarga</div>
 
-          {belongings.length === 0 && <div className="empty-state">Belum ada barang tercatat.</div>}
+          {belongings.length === 0 && (
+            <div className="py-6.5 px-3.5 text-center text-[13px] text-mute">
+              Belum ada barang tercatat.
+            </div>
+          )}
           {belongings.map((b) => (
-            <div key={b.id} className="list-row">
-              <div className="clickable" style={{ flex: 1 }} onClick={() => setBelongingSheet({ open: true, existing: b })}>
-                <div className="rt">{b.item_name}</div>
-                <div className="rs">Lokasi Terakhir: {b.last_location}</div>
+            <div
+              key={b.id}
+              className="mb-2 flex items-center justify-between rounded-xl bg-surface-sunken px-3.5 py-3 text-[13px]"
+            >
+              <div
+                className="flex-1 min-w-0 cursor-pointer"
+                onClick={() => setBelongingSheet({ open: true, existing: b })}
+              >
+                <div className="font-semibold text-ink">{b.item_name}</div>
+                <div className="text-xs text-mute">Lokasi Terakhir: {b.last_location}</div>
               </div>
-              <button className="mut" style={{ padding: "4px 6px" }} onClick={() => setDeleteBelonging(b)} aria-label="Hapus">🗑</button>
+              <button
+                type="button"
+                className="cursor-pointer p-1 text-xs text-mute transition hover:text-alert"
+                onClick={() => setDeleteBelonging(b)}
+                aria-label="Hapus"
+              >
+                🗑
+              </button>
             </div>
           ))}
 
-          <button className="btn navy" style={{ marginTop: 8 }} onClick={() => setBelongingSheet({ open: true })}>Tambah</button>
+          <button
+            type="button"
+            className="mt-2 w-full cursor-pointer rounded-full bg-navy py-3 px-4 text-center text-sm font-bold text-white transition hover:opacity-90 active:scale-[0.99]"
+            onClick={() => setBelongingSheet({ open: true })}
+          >
+            Tambah
+          </button>
         </div>
       )}
 
+      {/* TAB RIWAYAT */}
       {tab === "riwayat" && (
-        <div className="block">
-          <div className="card-title">Riwayat Interaksi AI</div>
-          <div className="card-sub" style={{ marginBottom: 10 }}>Percakapan pasien dengan NARAE</div>
+        <div className="mb-3.5">
+          <div className="text-[15px] font-bold text-ink">Riwayat Interaksi AI</div>
+          <div className="mb-2.5 text-xs text-mute">Percakapan pasien dengan NARAE</div>
 
-          {aiLogs.length === 0 && <div className="empty-state">Belum ada riwayat percakapan.</div>}
+          {aiLogs.length === 0 && (
+            <div className="py-6.5 px-3.5 text-center text-[13px] text-mute">
+              Belum ada riwayat percakapan.
+            </div>
+          )}
           {aiLogs.map((log) => (
-            <div key={log.id} className="card" style={{ marginBottom: 10 }}>
-              <div className="mut" style={{ fontSize: 11, marginBottom: 8 }}>
+            <div key={log.id} className="mb-2.5 rounded-2xl border border-line bg-surface p-4">
+              <div className="mb-2 text-[11px] text-mute">
                 {new Date(log.created_at).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}
               </div>
-              <div style={{
-                background: "var(--surface-sunken)", borderRadius: 12, padding: "8px 12px",
-                marginBottom: 6, fontSize: 13, maxWidth: "85%",
-              }}>
+              <div className="mb-1.5 max-w-[85%] rounded-xl bg-surface-sunken p-2.5 px-3 text-[13px] text-ink">
                 {log.patient_speech_transcript}
               </div>
-              <div style={{
-                background: "var(--navy-soft)", color: "var(--navy)", borderRadius: 12, padding: "8px 12px",
-                fontSize: 13, maxWidth: "85%", marginLeft: "auto",
-              }}>
+              <div className="ml-auto max-w-[85%] rounded-xl bg-navy-soft p-2.5 px-3 text-[13px] text-navy">
                 {log.ai_response_text}
               </div>
               {log.action_triggered === "escalate_to_nurse" && (
-                <div style={{ marginTop: 8 }}><span className="status-badge rose">Memanggil perawat</span></div>
+                <div className="mt-2">
+                  <span className="rounded-full bg-alert-soft px-2.5 py-1 text-[11px] font-bold text-alert">
+                    Memanggil perawat
+                  </span>
+                </div>
               )}
             </div>
           ))}
         </div>
       )}
 
+      {/* Bottom Sheets */}
       <TaskFormSheet
         open={taskSheet.open}
         existing={taskSheet.existing}
@@ -336,24 +481,29 @@ export function DetailKeluargaPage() {
         open={Boolean(deleteTask)}
         title="Hapus Aktivitas?"
         subtitle="Aktivitas akan dihapus dari jadwal"
-        onConfirm={async () => { if (deleteTask) { await api.deleteTask(deleteTask.id); setDeleteTask(null); loadDetail(); loadAllTasks(); } }}
+        onConfirm={async () => {
+          if (deleteTask) {
+            await api.deleteTask(deleteTask.id);
+            setDeleteTask(null);
+            loadDetail();
+            loadAllTasks();
+          }
+        }}
         onClose={() => setDeleteTask(null)}
       />
       <ConfirmSheet
         open={Boolean(deleteBelonging)}
         title="Hapus Barang?"
         subtitle="Barang akan dihapus dari daftar"
-        onConfirm={async () => { if (deleteBelonging) { await api.deleteBelonging(deleteBelonging.id); setDeleteBelonging(null); loadBelongings(); } }}
+        onConfirm={async () => {
+          if (deleteBelonging) {
+            await api.deleteBelonging(deleteBelonging.id);
+            setDeleteBelonging(null);
+            loadBelongings();
+          }
+        }}
         onClose={() => setDeleteBelonging(null)}
       />
     </PhoneLayout>
   );
-}
-
-function addMin(time: string, minutes: number): string {
-  const [h, m] = time.slice(0, 5).split(":").map(Number);
-  const total = h * 60 + m + minutes;
-  const nh = Math.floor((total % (24 * 60)) / 60);
-  const nm = total % 60;
-  return `${String(nh).padStart(2, "0")}:${String(nm).padStart(2, "0")}`;
 }

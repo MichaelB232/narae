@@ -4,13 +4,24 @@
 @theme inline {
   --color-paper: var(--bg);
   --color-surface: var(--surface);
+  --color-surface-sunken: var(--surface-sunken);
   --color-line: var(--line);
   --color-ink: var(--text);
   --color-mute: var(--text-mut);
   --color-navy: var(--navy);
+  --color-navy-soft: var(--navy-soft);
   --color-sage: var(--sage);
+  --color-sage-soft: var(--sage-soft);
   --color-alert: var(--rose);
+  --color-alert-soft: var(--rose-soft);
+  --color-neutral-badge: var(--neutral-badge);
+  --color-neutral-badge-text: var(--neutral-badge-text);
   --color-stage: #141820;
+
+  --radius-card: 16px;
+  --radius-sheet: 24px;
+  --radius-chip: 999px;
+  --radius-input: 10px;
 }
 
 @theme {

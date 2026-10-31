@@ -24,36 +24,59 @@ export function KeluargaPage() {
     });
   }, [user, navigate]);
 
-  if (!patients) return <PhoneLayout><p className="mut" style={{ padding: 20 }}>Memuat…</p></PhoneLayout>;
+  if (!patients) {
+    return (
+      <PhoneLayout>
+        <p className="p-5 text-[13px] text-mute">Memuat…</p>
+      </PhoneLayout>
+    );
+  }
 
   return (
     <PhoneLayout>
-      <div className="block">
-        <h1 style={{ fontSize: 20, marginBottom: 2 }}>Daftar Pasien</h1>
-        <p className="mut">Lihat detail anggota keluarga Anda</p>
+      <div className="mb-3.5">
+        <h1 className="mb-0.5 text-xl font-bold text-ink">Daftar Pasien</h1>
+        <p className="m-0 text-[13px] text-mute">Lihat detail anggota keluarga Anda</p>
       </div>
 
       {patients.map((p) => {
         const age = calcAge(p.date_of_birth);
         return (
-          <div key={p.id} className="card block" style={{ cursor: "pointer" }} onClick={() => navigate(`/keluarga/${p.id}`)}>
-            <div className="patient-mini">
+          <div
+            key={p.id}
+            className="mb-3.5 cursor-pointer rounded-2xl border border-line bg-surface p-4 transition hover:border-navy/40 active:scale-[0.99]"
+            onClick={() => navigate(`/keluarga/${p.id}`)}
+          >
+            <div className="flex items-center gap-3">
               <Avatar name={p.name} />
-              <div style={{ flex: 1 }}>
-                <div className="name">{p.name}</div>
-                <div className="age">{age ? `${age} Tahun` : ""}</div>
-                <div className="pill-row">
-                  <span className={`pill ${p.is_online ? "online" : "offline"}`}>{p.is_online ? "• Online" : "• Offline"}</span>
-                  <span className="pill battery">{p.battery_percentage ?? "-"}%</span>
+              <div className="flex-1 min-w-0">
+                <div className="text-[15px] font-bold text-ink">{p.name}</div>
+                <div className="text-xs text-mute">{age ? `${age} Tahun` : ""}</div>
+                <div className="mt-0.5 flex gap-1.5">
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                      p.is_online ? "bg-sage-soft text-sage" : "bg-neutral-badge text-neutral-badge-text"
+                    }`}
+                  >
+                    {p.is_online ? "• Online" : "• Offline"}
+                  </span>
+                  <span className="rounded-full bg-sage-soft px-2 py-0.5 text-[10px] font-bold text-sage">
+                    {p.battery_percentage ?? "-"}%
+                  </span>
                 </div>
               </div>
-              <span className="mut">›</span>
+              <span className="text-sm font-bold text-mute">›</span>
             </div>
           </div>
         );
       })}
 
-      <button className="btn navy block" disabled title="Belum tersedia di versi demo ini">
+      <button
+        type="button"
+        className="mb-3.5 w-full cursor-not-allowed rounded-full bg-navy py-3.25 px-4 text-center text-sm font-bold text-white opacity-50"
+        disabled
+        title="Belum tersedia di versi demo ini"
+      >
         + Tambah Anggota
       </button>
     </PhoneLayout>
