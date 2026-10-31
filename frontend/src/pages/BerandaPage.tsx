@@ -517,10 +517,12 @@ function MultiDashboard({
 
 
         {/* --- MENUNGGU PERSETUJUAN CAREGIVER --- */}
+        {/* {pendingMulti.length} */}
         {pendingMulti.length > 0 && (
           <section className={navyCardClass}>
             <h2 className={headingClass}>
               Menunggu Persetujuan Caregiver
+              {/* {pendingMulti.length} */}
             </h2>
 
             <p className="mb-3 mt-1 text-xs leading-relaxed text-slate-500">
@@ -568,7 +570,8 @@ function MultiDashboard({
               ))}
             </div>
           </section>
-        )}
+              )}
+        
 
 
         {/* --- CARD 2: AKTIVITAS / JADWAL HARI INI --- */}
