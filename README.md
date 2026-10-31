@@ -9,8 +9,8 @@ narae/
 ├─ db/init.sql              schema final + seed 2 skenario akun
 ├─ backend/                 TypeScript, berlapis: repositories → services → controllers → routes
 ├─ agent/                   paket TERPISAH dari backend: tools modular + prompt + Gemini client
-├─ frontend/                React + Vite + TypeScript, struktur ikut Figma
-└─ wearable-sim/             simulator gelang 3D — mic ASLI (Web Speech API), bisa ganti-ganti pasien
+└─ frontend/                React + Vite + TypeScript, struktur ikut Figma
+   └─ public/sim/           simulator gelang 3D — mic ASLI (Web Speech API), bisa ganti-ganti pasien
 ```
 
 ## 1. Jalankan
@@ -23,14 +23,12 @@ docker compose up --build
 ```
 
 - Backend: `http://localhost:4000` (cek `curl localhost:4000/api/health`)
-- Frontend (dashboard perawat): `http://localhost:5173`
-- Simulator gelang: **tidak** didockerkan (perlu akses mikrofon browser di mesin kamu) —
-  jalankan manual:
-  ```bash
-  cd wearable-sim
-  npx serve .
-  ```
-  lalu buka di **Chrome** (Web Speech API paling stabil di Chrome; Safari/Firefox terbatas).
+- Frontend: `http://localhost:5173` — satu halaman terbagi dua: **kiri** simulator gelang 3D,
+  **kanan** dashboard perawat. Tidak perlu `npx serve`; simulator dilayani dari
+  `frontend/public/sim/`. Buka di **Chrome** (Web Speech API paling stabil di Chrome;
+  Safari/Firefox terbatas) dan izinkan mikrofon.
+- Untuk deploy online, set `VITE_API_URL` (alamat API publik, **https**) di `.env` sebelum
+  `docker compose up --build`; nilai itu dipakai dashboard dan simulator.
 
 ## 2. Akun demo (login di `localhost:5173`)
 
@@ -146,7 +144,7 @@ konsisten dengan keputusan kamu menyembunyikan tab Statistik di Detail Keluarga 
 - **Mic asli**: `js/hardware/speechInput.js` pakai `SpeechRecognition` browser (`lang: "id-ID"`).
   Browser akan minta izin mikrofon saat pertama kali tombol Bantuan ditekan — izinkan.
   Berjalan di `localhost` tanpa perlu HTTPS (browser menganggap localhost "secure context").
-- **Pilih pasien**: dropdown "Jadi pasien siapa?" di panel kanan, di-populate dari
+- **Pilih pasien**: dropdown pasien di pojok kiri atas kolom 3D, di-populate dari
   `GET /api/devices`-nya lewat `GET /api/patients`. Ganti dropdown sebelum tekan Jadwal/Bantuan
   untuk mensimulasikan gelang pasien lain (satu gelang fisik dipakai bergantian).
 - Tombol **Jadwal** fetch jadwal asli dari `GET /api/patients/:id` (sumber sama dengan AI & dashboard).

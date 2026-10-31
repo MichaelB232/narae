@@ -14,8 +14,7 @@ async function initPatientSelector(){
       if(!opt) return;
       CONFIG.patientId=Number(opt.value);
       CONFIG.apiDeviceId=opt.dataset.device?Number(opt.dataset.device):null;
-      const logEl=document.getElementById("log");
-      if(logEl) logEl.insertAdjacentHTML("afterbegin","<div>Gelang sekarang mensimulasikan: <b>"+opt.textContent+"</b></div>");
+      if(typeof logAdd==="function")logAdd("Gelang mensimulasikan: "+opt.textContent);
     }
 
     sel.addEventListener("change",applySelection);

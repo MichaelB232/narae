@@ -20,6 +20,7 @@ frontend/.cache/
 # Backend & Agent build (TypeScript compiled files)
 backend/dist/
 agent/dist/
+frontend/dist/
 
 # 4. Database & Docker Volume Data
 # Mencegah data persisten postgres lokal ikut ter-commit

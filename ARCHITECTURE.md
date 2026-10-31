@@ -4,7 +4,7 @@ Dokumen ini menjelaskan struktur arsitektur sistem **NARAE** secara menyeluruh (
 1. **Modul Asisten AI (`agent/`)**
 2. **Backend API & Lapisan Bisnis (`backend/`)**
 3. **Frontend Dashboard Caregiver (`frontend/`)**
-4. **Simulator Gelang Pendamping 3D (`wearable-sim/`)**
+4. **Simulator Gelang Pendamping 3D (`frontend/public/sim/`)**
 5. **Skema Database & Relasi (`db/init.sql`)**
 6. **Panduan Prompting untuk AI Coding Assistant**
 
@@ -87,9 +87,9 @@ Frontend dibangun menggunakan **React 18**, **Vite**, dan **TypeScript**, diopti
 
 ---
 
-## 4. Simulator Gelang Pendamping 3D (`wearable-sim/`)
+## 4. Simulator Gelang Pendamping 3D (`frontend/public/sim/`)
 
-Simulator berbasis **Three.js** dan Web Speech API yang mensimulasikan gelang fisik wearable:
+Simulator berbasis **Three.js** dan Web Speech API yang mensimulasikan gelang fisik wearable. Ia dilayani sebagai berkas statis dan ditampilkan di kolom kiri halaman lewat `<iframe src="/sim/index.html?embed=1&api=...">` (`SimPane.tsx`, dibungkus `SplitLayout.tsx`); dashboard di kolom kanan. Keduanya tidak saling memanggil: simulator menulis lewat backend, dashboard membaca lewat polling `GET /api/help-requests`.
 - **Speech-to-Text (STT)**: Menangkap suara asli pengguna melalui mikrofon laptop/HP (`SpeechRecognition`).
 - **Text-to-Speech (TTS)**: Memprioritaskan *Neural/Natural Voice* Bahasa Indonesia (misal: *Microsoft Gadis Natural* pada Microsoft Edge atau Google Indonesian Voice pada Chrome).
 - **Multi-Turn Conversation**: Setelah menjawab, simulator otomatis mendengarkan kembali secara berlanjut sampai pasien mengucapkan kata selesai (*"terima kasih"*, *"cukup"*, dsb.) atau hening selama beberapa detik.
