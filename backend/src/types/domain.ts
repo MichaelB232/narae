@@ -106,6 +106,7 @@ export interface HelpRequest {
   triggered_by_interaction_id: number | null;
   status: RequestStatus;
   expires_at: string;
+  seconds_left: number;
   resolved_at: string | null;
   created_at: string;
 }

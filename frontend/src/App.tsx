@@ -4,6 +4,8 @@ import { LoginPage } from "./pages/LoginPage";
 import { BerandaPage } from "./pages/BerandaPage";
 import { KeluargaPage } from "./pages/KeluargaPage";
 import { DetailKeluargaPage } from "./pages/DetailKeluargaPage";
+import { RiwayatPage } from "./pages/RiwayatPage";
+import { RiwayatDetailPage } from "./pages/RiwayatDetailPage";
 import { PengaturanPage } from "./pages/PengaturanPage";
 import { SplitLayout } from "./components/SplitLayout";
 
@@ -23,6 +25,8 @@ export default function App() {
             <Route path="/" element={<BerandaPage />} />
             <Route path="/keluarga" element={<KeluargaPage />} />
             <Route path="/keluarga/:id" element={<DetailKeluargaPage />} />
+            <Route path="/riwayat" element={<RiwayatPage />} />
+            <Route path="/riwayat/:id" element={<RiwayatDetailPage />} />
             <Route path="/pengaturan" element={<PengaturanPage />} />
           </Route>
         </Routes>

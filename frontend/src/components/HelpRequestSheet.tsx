@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BottomSheet } from "./BottomSheet";
 import { Avatar } from "./Avatar";
 import type { HelpRequestItem } from "../types";
@@ -20,21 +20,27 @@ export function HelpRequestSheet({
   onAcknowledge: () => void;
   onLater: () => void;
 }) {
-  const [timeLeft, setTimeLeft] = useState(10);
+  const [timeLeft, setTimeLeft] = useState(0);
+  const onLaterRef = useRef(onLater);
+  onLaterRef.current = onLater;
 
   useEffect(() => {
     if (!item) return;
-    setTimeLeft(10);
+    const remaining = () => Math.max(0, Math.ceil((item.deadline - Date.now()) / 1000));
+    setTimeLeft(remaining());
+    if (remaining() === 0) {
+      onLaterRef.current();
+      return;
+    }
+
     const interval = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          onLater();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+      const left = remaining();
+      setTimeLeft(left);
+      if (left === 0) {
+        clearInterval(interval);
+        onLaterRef.current();
+      }
+    }, 250);
     return () => clearInterval(interval);
   }, [item?.id]);
 
@@ -92,7 +98,7 @@ export function HelpRequestSheet({
           Tangani
         </button>
       </div>
-      <div className="mt-2">
+      {/* <div className="mt-2">
         <button
           type="button"
           className="w-full cursor-pointer rounded-full bg-surface-sunken py-3 px-4 text-center text-sm font-bold text-ink transition hover:opacity-90 active:scale-[0.99]"
@@ -100,7 +106,7 @@ export function HelpRequestSheet({
         >
           Nanti Dulu
         </button>
-      </div>
+      </div> */}
     </BottomSheet>
   );
 }

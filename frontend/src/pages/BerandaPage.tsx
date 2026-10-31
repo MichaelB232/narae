@@ -69,14 +69,18 @@ export function BerandaPage() {
 
   const loadHelp = useCallback(async () => {
     if (!user) return;
-    setHelpRequests(await api.helpRequests(user.id));
+    const rows = await api.helpRequests(user.id);
+    const receivedAt = Date.now();
+    setHelpRequests(
+      rows.map((r) => ({ ...r, deadline: receivedAt + Number(r.seconds_left) * 1000 }))
+    );
   }, [user]);
 
   useEffect(() => {
     loadPatients();
     loadHelp();
 
-    const t = setInterval(loadHelp, 4000);
+    const t = setInterval(loadHelp, 1000);
     return () => clearInterval(t);
   }, [loadPatients, loadHelp]);
 
@@ -85,7 +89,7 @@ export function BerandaPage() {
     if (sheetItem) return;
 
     const fresh = helpRequests.find(
-      (h) => h.status === "PENDING" && !dismissedIds.has(h.id)
+      (h) => h.status === "PENDING" && h.deadline > Date.now() && !dismissedIds.has(h.id)
     );
 
     if (fresh) setSheetItem(fresh);
@@ -107,8 +111,15 @@ export function BerandaPage() {
     const currentId = Number(sheetItem.id);
     const targetPatientId = sheetItem.patient_id;
 
+    let acknowledged = false;
     try {
-      await api.acknowledgeHelp(currentId);
+      const updated: any = await api.acknowledgeHelp(currentId);
+      acknowledged = updated?.status === "ACKNOWLEDGED";
+      if (acknowledged) {
+        setHelpRequests((prev) =>
+          prev.map((h) => (h.id === currentId ? { ...h, status: "ACKNOWLEDGED" } : h))
+        );
+      }
     } catch (e) {
       console.warn("Acknowledge help warning:", e);
     }
@@ -118,7 +129,7 @@ export function BerandaPage() {
 
     loadHelp();
 
-    if (targetPatientId) {
+    if (acknowledged && targetPatientId) {
       navigate(`/keluarga/${targetPatientId}`);
     }
   }
@@ -425,7 +436,7 @@ function MultiDashboard({
     ) ?? [];
 
   const activeCalls = helpRequests.filter(
-    (h) => h.status === "PENDING" || h.status === "ACKNOWLEDGED"
+    (h) => h.status === "PENDING" && h.deadline > Date.now()
   );
 
   const onlineCount = patients.filter((p) => p.is_online).length;

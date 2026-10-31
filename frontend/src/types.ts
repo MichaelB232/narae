@@ -58,6 +58,8 @@ export interface HelpRequestItem {
   patient_speech_transcript: string | null;
   created_at: string;
   expires_at: string;
+  seconds_left: number;
+  deadline: number;
   resolved_at: string | null;
 }
 
