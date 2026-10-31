@@ -22,6 +22,7 @@ export interface BelongingsPatient {
 export interface PatientIdentity {
   id: number;
   name: string;
+  caregiver_name: string;
   clinical_notes: string | null;
 }
 

@@ -1,6 +1,6 @@
 import { SchemaType, type Tool, type ToolExecContext } from "./types.js";
 
-// Fungsi: mengambil jadwal tugas pasien untuk HARI INI (sumber yang sama dengan dashboard perawat).
+// Mengambil jadwal tugas pasien untuk HARI INI (sumber yang sama dengan dashboard perawat).
 export const getTodayTasksTool: Tool = {
   name: "get_today_tasks",
   oneLineDescription: "Mengambil daftar jadwal tugas pasien untuk hari ini (nama tugas, jam, status).",

@@ -1,12 +1,12 @@
 import { SchemaType, type Tool, type ToolExecContext } from "./types.js";
 
-// Fungsi: memberi tahu tanggal & jam saat ini (sering ditanya pasien demensia yang disorientasi waktu).
+// Memberi tahu tanggal & jam saat ini (sering ditanya pasien demensia yang disorientasi waktu).
 export const getCurrentDateTimeTool: Tool = {
   name: "get_current_datetime",
   oneLineDescription: "Memberi tahu tanggal dan jam saat ini sesuai waktu server.",
   declaration: {
     name: "get_current_datetime",
-    description: "Ambil tanggal dan jam sekarang. Panggil ini kalau pasien bertanya 'sekarang jam berapa' atau 'hari apa ini'.",
+    description: "Ambil tanggal dan jam sekarang. Panggil ini kalau pasien bertanya 'sekarang jam berapa' atau 'hari apa ini', jika bertanya jam cukup tanya jamnya, jika tanya hari cukup jawab hari jika tanya keduanya jawab keduanya.",
     parameters: { type: SchemaType.OBJECT, properties: {} },
   },
   async execute(_args: unknown, _ctx: ToolExecContext) {
