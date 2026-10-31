@@ -21,13 +21,13 @@ const cardClass =
   "rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden";
 
 const navyCardClass =
-  "rounded-2xl border border-[#dce3ed] bg-[#f3f6fa] p-4";
+  "rounded-2xl border border-[#dce3ed] bg-[#f3f6fa] p-4 flex flex-col gap-4";
 
 const headingClass = "text-sm font-bold text-slate-900";
 const headingBlueClass = "text-sm font-bold text-slate-900 bg-linear-to-r from-[#426783] to-[#A8C1D1] p-4";
 
 const buttonBaseClass =
-  "inline-flex items-center justify-center rounded-xl px-3 py-2.5 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex items-center justify-center rounded-full px-3 py-2.5 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50";
 
 const approveButtonClass =
   `${buttonBaseClass} bg-[#e5f1e9] text-[#38664a] hover:bg-[#d5e8dc]`;
@@ -217,33 +217,36 @@ function TaskCompletedByPatient({
   if (pendingTasks.length === 0) return null;
 
   return (
-    <section className={navyCardClass}>
-      <h2 className={headingClass}>
-        Menunggu Persetujuan Caregiver
-      </h2>
+    <section className={cardClass}>
+      <div className="px-4 pt-4">
+        <h2 className="text-[#426783] font-semibold text-sm">
+          Menunggu Persetujuan Caregiver
+        </h2>
 
-      <p className="mb-3 mt-1 text-xs leading-relaxed text-slate-500">
-        Pasien {patientName ?? "ini"} melapor tugas selesai via Asisten AI.
-      </p>
+        <p className="text-xs font-normal text-[#426783]">
+          Pasien {patientName ?? "ini"} melapor tugas selesai via Asisten AI.
+        </p>
+      </div>
 
-      <div className="flex flex-col gap-3">
+
+      <div className="flex flex-col gap-3 p-4">
         {pendingTasks.map((t) => (
           <div
             key={t.id}
             className="border-t border-slate-200 pt-3 first:border-0 first:pt-0"
           >
-            <div className="flex items-center justify-between gap-2">
-              <div className="min-w-0">
-                <h3 className="text-sm font-bold text-slate-800">
+            <div className="flex items-center justify-between gap-2 bg-[#527FA8]/10 p-4 rounded-xl">
+              <div className="min-w-0 ">
+                <h3 className="text-sm font-bold text-[#426783]">
                   {t.task_name}
                 </h3>
 
-                <p className="mt-1 text-[11px] text-slate-500">
+                <p className="text-[11px] text-[#426783]">
                   Jadwal: {hhmm(t.scheduled_time)}
                 </p>
               </div>
 
-              <span className="shrink-0 rounded-full bg-[#e3eaf3] px-2.5 py-1 text-[10px] font-semibold text-[#344966]">
+              <span className="shrink-0 rounded-full bg-[#426783] px-2.5 py-1 text-[10px] font-semibold text-white">
                 Laporan AI
               </span>
             </div>
@@ -253,14 +256,14 @@ function TaskCompletedByPatient({
                 className={`flex-1 ${approveButtonClass}`}
                 onClick={() => onConfirm(t.id, true)}
               >
-                ✓ Setujui Selesai
+                Setujui
               </button>
 
               <button
                 className={`flex-1 ${rejectButtonClass}`}
                 onClick={() => onConfirm(t.id, false)}
               >
-                ✕ Tolak
+                Tolak
               </button>
             </div>
           </div>
@@ -359,11 +362,10 @@ function SingleDashboard({
           <div className="text-right flex">
             <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold mb-1">
               <span
-                className={`rounded-full px-2 py-1 text-[10px] font-semibold ${
-                  detail.patient.is_online
-                    ? "bg-emerald-50 text-emerald-700"
-                    : "bg-slate-100 text-slate-500"
-                }`}
+                className={`rounded-full px-2 py-1 text-[10px] font-semibold ${detail.patient.is_online
+                  ? "bg-emerald-50 text-emerald-700"
+                  : "bg-slate-100 text-slate-500"
+                  }`}
               >
                 {detail.patient.is_online ? "• Online" : "• Offline"}
               </span>
@@ -616,14 +618,12 @@ function TimelineRow({ task }: { task: TaskItem }) {
 
   return (
     <div
-      className={`flex items-center gap-3 rounded-lg px-2 py-2 ${
-        isMissed ? "my-0.5 " : ""
-      }`}
+      className={`flex items-center gap-3 rounded-lg px-2 py-2 ${isMissed ? "my-0.5 " : ""
+        }`}
     >
       <span
-        className={`h-2.5 w-2.5 shrink-0 rounded-full ${
-          meta.dotMuted ? "bg-slate-300" : "bg-[#526b8a]"
-        }`}
+        className={`h-2.5 w-2.5 shrink-0 rounded-full ${meta.dotMuted ? "bg-slate-300" : "bg-[#526b8a]"
+          }`}
       />
 
       <div className="min-w-0 flex-1">

@@ -17,6 +17,85 @@ const DAY_LABELS_SHORT: Record<number, string> = {
   1: "Sen", 2: "Sel", 3: "Rab", 4: "Kam", 5: "Jum", 6: "Sab", 7: "Min",
 };
 
+const cardClass =
+  "rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden mb-3.5";
+
+const buttonBaseClass =
+  "inline-flex items-center justify-center rounded-xl px-3 py-2.5 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50";
+
+const approveButtonClass =
+  `${buttonBaseClass} bg-[#e5f1e9] text-[#38664a] hover:bg-[#d5e8dc]`;
+
+const rejectButtonClass =
+  `${buttonBaseClass} border border-rose-200 bg-white text-rose-600 hover:bg-rose-50`;
+
+function TaskCompletedByPatient({
+  pendingTasks,
+  patientName,
+  onConfirm,
+}: {
+  pendingTasks: TaskItem[];
+  patientName?: string;
+  onConfirm: (taskId: number, approve: boolean) => void;
+}) {
+  if (pendingTasks.length === 0) return null;
+
+  return (
+    <section className={cardClass}>
+      <div className="px-4 pt-4">
+        <h2 className="text-[#426783] font-semibold text-sm">
+          Menunggu Persetujuan Caregiver
+        </h2>
+
+        <p className="text-xs font-normal text-[#426783]">
+          Pasien {patientName ?? "ini"} melapor tugas selesai via Asisten AI.
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-3 p-4">
+        {pendingTasks.map((t) => (
+          <div
+            key={t.id}
+            className="border-t border-slate-200 pt-3 first:border-0 first:pt-0"
+          >
+            <div className="flex items-center justify-between gap-2 bg-[#527FA8]/10 p-4 rounded-xl">
+              <div className="min-w-0 ">
+                <h3 className="text-sm font-bold text-[#426783]">
+                  {t.task_name}
+                </h3>
+
+                <p className="text-[11px] text-[#426783]">
+                  Jadwal: {hhmm(t.scheduled_time)}
+                </p>
+              </div>
+
+              <span className="shrink-0 rounded-full bg-[#426783] px-2.5 py-1 text-[10px] font-semibold text-white">
+                Laporan AI
+              </span>
+            </div>
+
+            <div className="mt-3 flex gap-2">
+              <button
+                className={`flex-1 ${approveButtonClass}`}
+                onClick={() => onConfirm(t.id, true)}
+              >
+                Setujui
+              </button>
+
+              <button
+                className={`flex-1 ${rejectButtonClass}`}
+                onClick={() => onConfirm(t.id, false)}
+              >
+                Tolak
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export function DetailKeluargaPage() {
   const { id } = useParams<{ id: string }>();
   const patientId = Number(id);
@@ -104,7 +183,7 @@ export function DetailKeluargaPage() {
 
   return (
     <PhoneLayout>
-      <div className="p-4 pt-[64px] bg-linear-to-br from-[#EAF1F5] to-[#FAF7F0]">
+      <div className="p-4 pt-[64px] bg-linear-to-br from-[#EAF1F5] to-[#FAF7F0] min-h-screen">
         {toast && <SuccessToast title={toast.title} subtitle={toast.subtitle} />}
 
         {/* Header Back & Judul */}
@@ -167,52 +246,21 @@ export function DetailKeluargaPage() {
         {tab === "aktivitas" && (
           <>
             {/* Menunggu Persetujuan Caregiver */}
-            {pendingApprovals.length > 0 && (
-              <div className="mb-3.5 rounded-2xl border border-[#c9d7df] bg-navy-soft p-4">
-                <div className="text-[15px] font-bold text-ink">Menunggu Persetujuan Caregiver</div>
-                <div className="mb-2.5 text-xs text-mute">
-                  Pasien melapor tugas telah diselesaikan melalui Asisten AI di gelang
-                </div>
-                {pendingApprovals.map((t) => (
-                  <div key={t.id} className="mt-2 border-t border-line/60 pt-2.5">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="text-[13.5px] font-bold text-ink">{t.task_name}</div>
-                        <div className="text-[11.5px] text-mute">Jadwal: {hhmm(t.scheduled_time)}</div>
-                      </div>
-                      <span className="rounded-full bg-navy-soft px-2.5 py-1 text-[11px] font-bold text-navy">
-                        Laporan AI
-                      </span>
-                    </div>
-                    <div className="mt-2.5 flex gap-2">
-                      <button
-                        type="button"
-                        className="flex-1 cursor-pointer rounded-full bg-sage py-2 px-3 text-center text-[13px] font-bold text-white transition hover:opacity-90 active:scale-[0.99]"
-                        onClick={() => handleConfirmTask(t.id, true)}
-                      >
-                        ✓ Setujui Selesai
-                      </button>
-                      <button
-                        type="button"
-                        className="flex-1 cursor-pointer rounded-full border border-line bg-surface py-2 px-3 text-center text-[13px] font-bold text-alert transition hover:bg-alert-soft active:scale-[0.99]"
-                        onClick={() => handleConfirmTask(t.id, false)}
-                      >
-                        ✕ Tolak
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            <TaskCompletedByPatient
+              pendingTasks={pendingApprovals}
+              patientName={detail.patient.name}
+              onConfirm={handleConfirmTask}
+            />
 
             {/* Aktivitas Hari Ini (Timeline) */}
             <div className="mb-3.5">
+              
+
+              <div className="rounded-2xl border border-line bg-surface p-4">
               <div className="mb-0.5 text-[15px] font-bold text-ink">Aktivitas Hari Ini</div>
               <div className="mb-2.5 text-xs text-mute">
                 {new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
               </div>
-
-              <div className="rounded-2xl border border-line bg-surface p-4">
                 <div className="relative ml-1.5">
                   {detail.todayTasks.length === 0 && (
                     <div className="py-6.5 px-3.5 text-center text-[13px] text-mute">
@@ -223,6 +271,7 @@ export function DetailKeluargaPage() {
                     const meta = taskStatusMeta[t.status];
                     const isMissed = t.status === "MISSED";
                     const isLast = idx === detail.todayTasks.length - 1;
+
                     return (
                       <div
                         key={t.id}
@@ -245,12 +294,12 @@ export function DetailKeluargaPage() {
                         </div>
                         <div className="flex items-center gap-1.5">
                           <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold whitespace-nowrap ${meta.tone === "sage"
-                              ? "bg-sage-soft text-sage"
-                              : meta.tone === "rose"
-                                ? "bg-alert-soft text-alert"
-                                : meta.tone === "navy"
-                                  ? "bg-navy-soft text-navy"
-                                  : "bg-neutral-badge text-neutral-badge-text"
+                            ? "bg-sage-soft text-sage"
+                            : meta.tone === "rose"
+                              ? "bg-alert-soft text-alert"
+                              : meta.tone === "navy"
+                                ? "bg-navy-soft text-navy"
+                                : "bg-neutral-badge text-neutral-badge-text"
                             }`}>
                             {meta.label}
                           </span>
