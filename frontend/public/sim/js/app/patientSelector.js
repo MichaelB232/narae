@@ -3,7 +3,10 @@ async function initPatientSelector(){
   const sel=document.getElementById("patientSelect");
   if(!sel) return;
   try{
-    const res=await fetch(CONFIG.storage.url+"/patients");
+    const urlParams = new URLSearchParams(window.location.search);
+    const nurseId = urlParams.get("nurseId");
+    const fetchUrl = CONFIG.storage.url + "/patients" + (nurseId ? "?nurseId=" + nurseId : "");
+    const res=await fetch(fetchUrl);
     const patients=await res.json();
     sel.innerHTML=patients.map(p=>
       '<option value="'+p.id+'" data-device="'+(p.device_id??"")+'">'+p.name+(p.room_number?" — "+p.room_number:"")+"</option>"

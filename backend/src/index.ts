@@ -8,6 +8,7 @@ import { helpRequestRouter } from "./routes/helpRequest.routes.js";
 import { deviceRouter } from "./routes/device.routes.js";
 import { aiRouter } from "./routes/ai.routes.js";
 import { belongingRouter } from "./routes/belonging.routes.js";
+import { demoRouter } from "./routes/demo.routes.js";
 import { helpRequestService } from "./services/helpRequest.service.js";
 
 const app = express();
@@ -23,6 +24,7 @@ app.use("/api/help-requests", helpRequestRouter);
 app.use("/api/devices", deviceRouter);
 app.use("/api/ai", aiRouter);
 app.use("/api/belongings", belongingRouter);
+app.use("/api/demo", demoRouter);
 
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error(err);
