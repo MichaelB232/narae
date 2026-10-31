@@ -8,7 +8,7 @@ export async function list(req: Request, res: Response, next: NextFunction) {
     const patients = nurseId ? await patientService.listForNurse(nurseId) : await patientService.listAll();
     res.json(patients);
   } catch (err) {
-    next(err);
+    next(err); 
   }
 }
 

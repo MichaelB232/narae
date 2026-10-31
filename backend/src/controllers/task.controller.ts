@@ -26,7 +26,7 @@ export async function create(req: Request, res: Response, next: NextFunction) {
 // PATCH /api/tasks/:id — edit task "as a whole" (nama/jam/durasi/isActive/daysOfWeek)
 export async function update(req: Request, res: Response, next: NextFunction) {
   try {
-    const { taskName, scheduledTime, durationMinutes, isActive, daysOfWeek } = req.body;
+    const { taskName, scheduledTime, durationMinutes, isActive, daysOfWeek, type, scheduledDate } = req.body;
     const task = await taskService.update({
       taskId: Number(req.params.id),
       taskName,
@@ -34,6 +34,8 @@ export async function update(req: Request, res: Response, next: NextFunction) {
       durationMinutes,
       isActive,
       daysOfWeek,
+      type,
+      scheduledDate,
     });
     if (!task) return res.status(404).json({ error: "Task tidak ditemukan" });
     res.json(task);
