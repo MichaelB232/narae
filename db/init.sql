@@ -172,48 +172,48 @@ INSERT INTO patient_belongings (patient_id, item_name, last_location, default_lo
   (3, 'Alat bantu dengar','Meja rias',               'Kotak di laci atas'),
   (4, 'Foto keluarga',   'Meja nakas kamar 1215',    'Meja nakas kamar 1215');
 
--- Task harian (RECURRING setiap hari, tanpa days_of_week)
+-- Task harian (RECURRING setiap hari, waktu dinamis relatif terhadap waktu build/start saat ini di WIB)
 INSERT INTO patient_tasks (patient_id, created_by, task_name, spoken_instruction, voice_profile_id, type, scheduled_time, duration_minutes, status) VALUES
-  (1, 1, 'Obat Tekanan Darah', 'Pak Arthur, waktunya minum obat tekanan darah ya.', 1, 'RECURRING', '08:00', 10, 'SCHEDULED'),
-  (2, 2, 'Sarapan',            'Ibu Odette, yuk sarapan dulu ya.', 2, 'RECURRING', '08:00', 30, 'CONFIRMED_BY_NURSE'),
-  (2, 2, 'Latihan Mengingat (Remember Day)', 'Ibu Odette, yuk kita latihan mengingat sebentar.', 2, 'RECURRING', '08:30', 30, 'MISSED'),
-  (2, 2, 'Jalan Pagi',         'Ibu Odette, ayo jalan-jalan pagi sebentar di taman.', 2, 'RECURRING', '10:00', 30, 'REMINDER_PLAYED'),
-  (2, 2, 'Membaca Buku',       'Ibu Odette, waktunya membaca buku favorit.', 2, 'RECURRING', '11:30', 30, 'SCHEDULED');
+  (1, 1, 'Obat Tekanan Darah', 'Pak Arthur, waktunya minum obat tekanan darah ya.', 1, 'RECURRING', date_trunc('minute', (now() AT TIME ZONE 'Asia/Jakarta') + interval '45 minutes')::time, 15, 'SCHEDULED'),
+  (2, 2, 'Sarapan',            'Ibu Odette, yuk sarapan dulu ya.', 2, 'RECURRING', date_trunc('minute', (now() AT TIME ZONE 'Asia/Jakarta') - interval '3 hours')::time, 30, 'CONFIRMED_BY_NURSE'),
+  (2, 2, 'Latihan Mengingat (Remember Day)', 'Ibu Odette, yuk kita latihan mengingat sebentar.', 2, 'RECURRING', date_trunc('minute', (now() AT TIME ZONE 'Asia/Jakarta') - interval '90 minutes')::time, 30, 'MISSED'),
+  (2, 2, 'Jalan Pagi',         'Ibu Odette, ayo jalan-jalan pagi sebentar di taman.', 2, 'RECURRING', date_trunc('minute', (now() AT TIME ZONE 'Asia/Jakarta') - interval '10 minutes')::time, 30, 'REMINDER_PLAYED'),
+  (2, 2, 'Membaca Buku',       'Ibu Odette, waktunya membaca buku favorit.', 2, 'RECURRING', date_trunc('minute', (now() AT TIME ZONE 'Asia/Jakarta') + interval '2 hours')::time, 30, 'SCHEDULED');
 
--- Task berulang Senin/Rabu/Jumat saja
+-- Task berulang (termasuk hari ini)
 INSERT INTO patient_tasks (patient_id, created_by, task_name, spoken_instruction, voice_profile_id, type, days_of_week, scheduled_time, duration_minutes, status) VALUES
-  (1, 1, 'Fisioterapi Ringan', 'Pak Arthur, waktunya latihan fisioterapi ringan ya.', 1, 'RECURRING', '{1,3,5}', '10:00', 30, 'SCHEDULED'),
-  (3, 2, 'Senam Lansia',       'Ibu Siti, yuk ikut senam lansia di aula.', 1, 'RECURRING', '{1,3,5}', '07:30', 30, 'SCHEDULED');
+  (1, 1, 'Fisioterapi Ringan', 'Pak Arthur, waktunya latihan fisioterapi ringan ya.', 1, 'RECURRING', ARRAY[EXTRACT(ISODOW FROM (now() AT TIME ZONE 'Asia/Jakarta'))::smallint, 1, 3, 5], date_trunc('minute', (now() AT TIME ZONE 'Asia/Jakarta') + interval '3 hours')::time, 30, 'SCHEDULED'),
+  (3, 2, 'Senam Lansia',       'Ibu Siti, yuk ikut senam lansia di aula.', 1, 'RECURRING', ARRAY[EXTRACT(ISODOW FROM (now() AT TIME ZONE 'Asia/Jakarta'))::smallint, 1, 3, 5], date_trunc('minute', (now() AT TIME ZONE 'Asia/Jakarta') + interval '1 hour')::time, 30, 'SCHEDULED');
   
 -- Contoh riwayat interaksi AI (untuk tab "Riwayat" di Detail Keluarga)
 INSERT INTO ai_interaction_logs (patient_id, device_id, patient_speech_transcript, ai_response_text, action_triggered, latency_ms, created_at) VALUES
   (2, 2, 'Jam berapa sekarang?', 'Sekarang pukul 09 lewat 12 menit, hari Senin.', 'none', 820, now() - interval '3 hours'),
   (2, 2, 'Kacamata saya dimana?', 'Kacamata baca Ibu Odette terakhir terlihat di meja nakas kamar 1213.', 'none', 760, now() - interval '5 hours');
 
--- Task ONE_TIME hari ini, besok, dua hari lagi, dan tiga hari lagi (untuk uji AI Agent)
+-- Task ONE_TIME hari ini (dinamis relatif dari sekarang), besok, dua hari lagi, dan tiga hari lagi (untuk uji AI Agent)
 INSERT INTO patient_tasks (patient_id, created_by, task_name, spoken_instruction, voice_profile_id, type, scheduled_date, scheduled_time, duration_minutes, status) VALUES
   -- Hari Ini (CURRENT_DATE)
-  (1, 1, 'Kunjungan Dokter',           'Pak Arthur, hari ini ada jadwal bertemu dokter jam 2 siang.', 1, 'ONE_TIME', CURRENT_DATE, '14:00', 60, 'SCHEDULED'),
-  (1, 1, 'Minum Teh Sore Bersama',     'Pak Arthur, waktunya minum teh sore hangat di teras.', 1, 'ONE_TIME', CURRENT_DATE, '16:30', 20, 'SCHEDULED'),
-  (2, 2, 'Pemeriksaan Tensi Darah',    'Ibu Odette, suster akan memeriksa tensi darah sebentar ya.', 2, 'ONE_TIME', CURRENT_DATE, '14:30', 15, 'SCHEDULED'),
-  (2, 2, 'Menyiram Tanaman Bunga',     'Ibu Odette, waktunya menyiram tanaman bunga di beranda.', 2, 'ONE_TIME', CURRENT_DATE, '16:00', 20, 'SCHEDULED'),
-  (4, 2, 'Panggilan Video Keluarga',   'Pak Herman, sebentar lagi ada panggilan video dari cucu.', 1, 'ONE_TIME', CURRENT_DATE, '16:00', 15, 'SCHEDULED'),
+  (1, 1, 'Kunjungan Dokter',           'Pak Arthur, hari ini ada jadwal bertemu dokter sebentar lagi.', 1, 'ONE_TIME', CURRENT_DATE, date_trunc('minute', (now() AT TIME ZONE 'Asia/Jakarta') + interval '1 hour 30 minutes')::time, 60, 'SCHEDULED'),
+  (1, 1, 'Minum Teh Sore Bersama',     'Pak Arthur, waktunya minum teh hangat di teras.', 1, 'ONE_TIME', CURRENT_DATE, date_trunc('minute', (now() AT TIME ZONE 'Asia/Jakarta') + interval '4 hours')::time, 20, 'SCHEDULED'),
+  (2, 2, 'Pemeriksaan Tensi Darah',    'Ibu Odette, suster akan memeriksa tensi darah sebentar ya.', 2, 'ONE_TIME', CURRENT_DATE, date_trunc('minute', (now() AT TIME ZONE 'Asia/Jakarta') + interval '30 minutes')::time, 15, 'SCHEDULED'),
+  (2, 2, 'Menyiram Tanaman Bunga',     'Ibu Odette, waktunya menyiram tanaman bunga di beranda.', 2, 'ONE_TIME', CURRENT_DATE, date_trunc('minute', (now() AT TIME ZONE 'Asia/Jakarta') + interval '3 hours')::time, 20, 'SCHEDULED'),
+  (4, 2, 'Panggilan Video Keluarga',   'Pak Herman, sebentar lagi ada panggilan video dari cucu.', 1, 'ONE_TIME', CURRENT_DATE, date_trunc('minute', (now() AT TIME ZONE 'Asia/Jakarta') + interval '2 hours')::time, 15, 'SCHEDULED'),
 
   -- Besok (CURRENT_DATE + 1)
-  (1, 1, 'Fisioterapi Bahu Mandiri',   'Pak Arthur, besok ada jadwal latihan fisioterapi bahu ya.', 1, 'ONE_TIME', CURRENT_DATE + interval '1 day', '09:30', 45, 'SCHEDULED'),
-  (1, 1, 'Telepon Anak Bungsu',        'Pak Arthur, besok malam ada jadwal telepon dari anak bungsu.', 1, 'ONE_TIME', CURRENT_DATE + interval '1 day', '19:00', 30, 'SCHEDULED'),
-  (2, 2, 'Kontrol Dokter Spesialis Saraf', 'Ibu Odette, besok ada jadwal kontrol ke dokter spesialis saraf.', 2, 'ONE_TIME', CURRENT_DATE + interval '1 day', '10:00', 60, 'SCHEDULED'),
-  (2, 2, 'Merajut Bersama Suster',     'Ibu Odette, besok sore kita merajut taplak bersama ya.', 2, 'ONE_TIME', CURRENT_DATE + interval '1 day', '15:00', 40, 'SCHEDULED'),
+  (1, 1, 'Fisioterapi Bahu Mandiri',   'Pak Arthur, besok ada jadwal latihan fisioterapi bahu ya.', 1, 'ONE_TIME', (CURRENT_DATE + interval '1 day')::date, '09:30', 45, 'SCHEDULED'),
+  (1, 1, 'Telepon Anak Bungsu',        'Pak Arthur, besok malam ada jadwal telepon dari anak bungsu.', 1, 'ONE_TIME', (CURRENT_DATE + interval '1 day')::date, '19:00', 30, 'SCHEDULED'),
+  (2, 2, 'Kontrol Dokter Spesialis Saraf', 'Ibu Odette, besok ada jadwal kontrol ke dokter spesialis saraf.', 2, 'ONE_TIME', (CURRENT_DATE + interval '1 day')::date, '10:00', 60, 'SCHEDULED'),
+  (2, 2, 'Merajut Bersama Suster',     'Ibu Odette, besok sore kita merajut taplak bersama ya.', 2, 'ONE_TIME', (CURRENT_DATE + interval '1 day')::date, '15:00', 40, 'SCHEDULED'),
 
   -- Dua Hari Lagi (CURRENT_DATE + 2)
-  (1, 1, 'Jalan Santai di Taman Lansia', 'Pak Arthur, lusa ada jadwal jalan santai di taman lansia.', 1, 'ONE_TIME', CURRENT_DATE + interval '2 day', '16:00', 45, 'SCHEDULED'),
-  (2, 2, 'Senam Kebugaran Lansia',     'Ibu Odette, lusa ada senam kebugaran di aula serbaguna.', 2, 'ONE_TIME', CURRENT_DATE + interval '2 day', '08:00', 30, 'SCHEDULED'),
+  (1, 1, 'Jalan Santai di Taman Lansia', 'Pak Arthur, lusa ada jadwal jalan santai di taman lansia.', 1, 'ONE_TIME', (CURRENT_DATE + interval '2 day')::date, '16:00', 45, 'SCHEDULED'),
+  (2, 2, 'Senam Kebugaran Lansia',     'Ibu Odette, lusa ada senam kebugaran di aula serbaguna.', 2, 'ONE_TIME', (CURRENT_DATE + interval '2 day')::date, '08:00', 30, 'SCHEDULED'),
 
   -- Tiga Hari Lagi (CURRENT_DATE + 3) (lebih dari 2 hari -> AI sebut tanggal)
-  (1, 1, 'Tes Darah Laboratorium',     'Pak Arthur, tiga hari lagi ada jadwal tes darah laboratorium pagi.', 1, 'ONE_TIME', CURRENT_DATE + interval '3 day', '07:30', 20, 'SCHEDULED'),
-  (2, 2, 'Kunjungan Cucu Tersayang',   'Ibu Odette, tiga hari lagi cucu tersayang akan datang berkunjung.', 2, 'ONE_TIME', CURRENT_DATE + interval '3 day', '13:30', 90, 'SCHEDULED');
+  (1, 1, 'Tes Darah Laboratorium',     'Pak Arthur, tiga hari lagi ada jadwal tes darah laboratorium pagi.', 1, 'ONE_TIME', (CURRENT_DATE + interval '3 day')::date, '07:30', 20, 'SCHEDULED'),
+  (2, 2, 'Kunjungan Cucu Tersayang',   'Ibu Odette, tiga hari lagi cucu tersayang akan datang berkunjung.', 2, 'ONE_TIME', (CURRENT_DATE + interval '3 day')::date, '13:30', 90, 'SCHEDULED');
 
--- Contoh panggilan yang tidak direspons dalam 10 detik (muncul di daftar "Panggilan Menunggu Respons")
+-- Contoh panggilan yang tidak direspons dalam 10 detik
 INSERT INTO ai_interaction_logs (patient_id, device_id, patient_speech_transcript, ai_response_text, action_triggered, latency_ms, created_at) VALUES
   (2, 2, 'Tolong panggilkan suster, saya butuh bantuan', 'Baik, saya sampaikan ke perawat sekarang.', 'escalate_to_nurse', 900, now() - interval '4 minutes');
 
