@@ -190,298 +190,320 @@ export function DetailKeluargaPage() {
 
   return (
     <PhoneLayout>
-      <div className="p-4 pt-[64px] bg-linear-to-br from-[#EAF1F5] to-[#FAF7F0] min-h-screen">
+      <div className="bg-linear-to-br from-[#EAF1F5] to-[#FAF7F0] min-h-screen">
         {toast && <SuccessToast title={toast.title} subtitle={toast.subtitle} />}
 
-        {/* Header Back & Judul */}
-        <div className="mb-3.5 flex items-center gap-2.5">
-          <BackButton onClick={() => navigate(-1)} />
-          <div>
-            <h1 className="m-0 text-lg font-bold text-ink">Detail Keluarga</h1>
-            <p className="m-0 text-[13px] text-mute">Lihat detail anggota keluarga Anda</p>
-          </div>
-        </div>
-
-        {/* Kartu Profil Pasien */}
-        <div className={`p-4 ${cardClass}`}>
-          <div className="flex items-center gap-3">
-            <Avatar name={detail.patient.name} />
-            <div className="flex-1 min-w-0">
-              <div className="text-[15px] font-bold text-ink">{detail.patient.name}</div>
-              <div className="text-xs text-mute">{age ? `${age} Tahun` : ""}</div>
-            </div>
-            <div className="flex gap-1.5">
-              <span
-                className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${detail.patient.is_online ? "bg-sage-soft text-sage" : "bg-neutral-badge text-neutral-badge-text"
-                  }`}
-              >
-                {detail.patient.is_online ? "• Online" : "• Offline"}
-              </span>
-              <span className="rounded-full bg-[#378568] px-2 py-0.5 text-[10px] font-bold text-white">
-                {detail.patient.battery_percentage ?? "-"}%
-              </span>
+        <div className="relative bg-gradient-to-b from-[#EEDFD2] to-[#FAF7F0] pt-[64px] pb-20 px-6 text-white">
+          {/* Header Back & Judul */}
+          <div className="mb-3.5 flex items-center gap-2.5">
+            <BackButton onClick={() => navigate(-1)} />
+            <div>
+              <h1 className="m-0 text-lg font-bold text-[#263746]">Detail Keluarga</h1>
+              <p className="m-0 text-[13px] text-[#263746]">Lihat detail anggota keluarga Anda</p>
             </div>
           </div>
-          <div className="mt-2 text-xs text-mute">
-            ↗ {doneToday} dari {detail.todayTasks.length} aktivitas dilakukan hari ini
-          </div>
-        </div>
 
-        {/* Segmented Tabs */}
-        <div className="my-3.5 flex gap-0.5 rounded-xl bg-white p-2 border border-line">
-          {(["aktivitas", "inventori", "riwayat"] as const).map((t) => (
-            <button
-              key={t}
-              type="button"
-              className={`flex-1 cursor-pointer rounded-full py-2 px-1 text-center text-[12.5px] capitalize transition ${tab === t ? "bg-navy font-bold text-white shadow-xs" : "font-semibold text-mute hover:text-ink"
-                }`}
-              onClick={() => setTab(t)}
+
+
+          <div className="absolute bottom-0 left-0 right-0 overflow-hidden leading-none pointer-events-none">
+            <svg
+              viewBox="0 0 500 40"
+              preserveAspectRatio="none"
+              className="w-full h-8 text-[#FDFBF7] fill-current"
             >
-              {t}
-            </button>
-          ))}
+              <path d="M0,0 C150,35 350,35 500,0 L500,40 L0,40 Z"></path>
+            </svg>
+          </div>
+
         </div>
+        <div className="px-5 -mt-16 relative z-10 max-w-md mx-auto space-y-4">
 
-        {/* TAB AKTIVITAS */}
-        {tab === "aktivitas" && (
-          <>
-            {/* Menunggu Persetujuan Caregiver */}
-            <TaskCompletedByPatient
-              pendingTasks={pendingApprovals}
-              patientName={detail.patient.name}
-              onConfirm={handleConfirmTask}
-            />
 
-            {/* Aktivitas Hari Ini (Timeline) */}
-            <div className="mb-3.5">
-              
-
-              <div className={`p-4 ${cardClass}`}>
-              <div className="mb-0.5 text-[15px] font-bold text-ink">Aktivitas Hari Ini</div>
-              <div className="mb-2.5 text-xs text-mute">
-                {new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+          {/* Kartu Profil Pasien */}
+          <div className={`p-4 ${cardClass}`}>
+            <div className="flex items-center gap-3">
+              <Avatar name={detail.patient.name} />
+              <div className="flex-1 min-w-0">
+                <div className="text-[15px] font-bold text-ink">{detail.patient.name}</div>
+                <div className="text-xs text-mute">{age ? `${age} Tahun` : ""}</div>
               </div>
-                {detail.todayTasks.length === 0 ? (
-                  <div className="py-6.5 px-3.5 text-center text-[13px] text-mute">
-                    Tidak ada jadwal hari ini.
-                  </div>
-                ) : (
-                  <Timeline
-                    dotCenter={20}
-                    items={detail.todayTasks.map((t) => ({
-                      id: t.id,
-                      active: !taskStatusMeta[t.status].dotMuted,
-                      alert: t.status === "MISSED",
-                      children: (
-                        <div className="flex items-start gap-3 py-2.5">
-                          <div className="min-w-0 flex-1">
-                            <div className="text-sm font-semibold text-ink">{t.task_name}</div>
-                            <div className="text-xs text-mute">
-                              {hhmm(t.scheduled_time)} – {hhmm(addMinutes(t.scheduled_time, t.duration_minutes))} WIB
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <TaskStatusPill status={t.status} />
-                            <button
-                              type="button"
-                              className="cursor-pointer rounded-md border border-line bg-navy-soft px-2 py-1 text-[11px] font-bold text-navy transition hover:opacity-90 active:scale-95"
-                              onClick={() => setStatusSheet({ open: true, task: t })}
-                            >
-                              Update Status
-                            </button>
-                          </div>
-                        </div>
-                      ),
-                    }))}
-                  />
-                )}
-              </div>
-            </div>
-
-            {/* Edit Jadwal Keluarga */}
-            <div className={`p-4 flex flex-col gap-4 ${cardClass}`}>
-              <div className="mb-1 flex items-start justify-between">
-                <div>
-                  <div className="text-[15px] font-bold text-ink">Edit Jadwal Keluarga</div>
-                  <div className="text-xs text-mute">Buat, ubah, dan hapus data</div>
-                </div>
-                <div className="inline-flex rounded-lg bg-[#A8C1D1]/10 p-1">
-                  <button
-                    type="button"
-                    className={`cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold transition ${scheduleFilter === "harian" ? "bg-navy font-bold text-white shadow-xs" : "text-mute hover:text-ink"
-                      }`}
-                    onClick={() => setScheduleFilter("harian")}
-                  >
-                    Harian
-                  </button>
-                  <button
-                    type="button"
-                    className={`cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold transition ${scheduleFilter === "berulang" ? "bg-navy font-bold text-white shadow-xs" : "text-mute hover:text-ink"
-                      }`}
-                    onClick={() => setScheduleFilter("berulang")}
-                  >
-                    Berulang
-                  </button>
-                </div>
-              </div>
-
-              {scheduleTasks.length === 0 && (
-                <div className="py-6.5 px-3.5 text-center text-[13px] text-mute">
-                  Belum ada jadwal di kategori ini.
-                </div>
-              )}
-              {scheduleTasks.map((t) => (
-                <div
-                  key={t.id}
-                  className={` flex items-center justify-between rounded-xl bg-linear-to-r from-white to-[#A8C1D1]/10 border border-[#A8C1D1] px-3.5 py-3 text-[13px] ${!t.is_active ? "opacity-60" : ""
+              <div className="flex gap-1.5">
+                <span
+                  className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${detail.patient.is_online ? "bg-sage-soft text-sage" : "bg-neutral-badge text-neutral-badge-text"
                     }`}
                 >
-                  <div
-                    className="flex-1 min-w-0 cursor-pointer"
-                    onClick={() => setTaskSheet({ open: true, existing: t })}
-                  >
-                    <div className="flex items-center gap-1.5 font-semibold text-ink">
-                      <span className="truncate">{t.task_name}</span>
-                      {!t.is_active && (
-                        <span className="rounded-full bg-alert-soft px-2 py-0.5 text-[10px] font-bold text-alert">
-                          Nonaktif
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-xs text-mute">{scheduleLine(t)} WIB</div>
+                  {detail.patient.is_online ? "• Online" : "• Offline"}
+                </span>
+                <span className="rounded-full bg-[#378568] px-2 py-0.5 text-[10px] font-bold text-white">
+                  {detail.patient.battery_percentage ?? "-"}%
+                </span>
+              </div>
+            </div>
+            <div className="mt-2 text-xs text-mute">
+              ↗ {doneToday} dari {detail.todayTasks.length} aktivitas dilakukan hari ini
+            </div>
+          </div>
+
+          {/* Segmented Tabs */}
+          <div className={`p-2 ${cardClass} flex`}>
+            {(["aktivitas", "inventori", "riwayat"] as const).map((t) => (
+              <button
+                key={t}
+                type="button"
+                className={`flex-1 cursor-pointer rounded-full py-2 px-1 text-center text-[12.5px] capitalize transition ${tab === t ? "bg-navy font-bold text-white shadow-xs" : "font-semibold text-mute hover:text-ink"
+                  }`}
+                onClick={() => setTab(t)}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+
+          {/* TAB AKTIVITAS */}
+          {tab === "aktivitas" && (
+            <>
+              {/* Menunggu Persetujuan Caregiver */}
+              <TaskCompletedByPatient
+                pendingTasks={pendingApprovals}
+                patientName={detail.patient.name}
+                onConfirm={handleConfirmTask}
+              />
+
+              {/* Aktivitas Hari Ini (Timeline) */}
+              <div className="mb-3.5">
+
+
+                <div className={`p-4 ${cardClass}`}>
+                  <div className="mb-0.5 text-[15px] font-bold text-ink">Aktivitas Hari Ini</div>
+                  <div className="mb-2.5 text-xs text-mute">
+                    {new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
                   </div>
-                  <div className="flex items-center gap-1.5">
+                  {detail.todayTasks.length === 0 ? (
+                    <div className="py-6.5 px-3.5 text-center text-[13px] text-mute">
+                      Tidak ada jadwal hari ini.
+                    </div>
+                  ) : (
+                    <Timeline
+                      dotCenter={20}
+                      items={detail.todayTasks.map((t) => ({
+                        id: t.id,
+                        active: !taskStatusMeta[t.status].dotMuted,
+                        alert: t.status === "MISSED",
+                        children: (
+                          <div className="flex items-start gap-3 py-2.5">
+                            <div className="min-w-0 flex-1">
+                              <div className="text-sm font-semibold text-ink">{t.task_name}</div>
+                              <div className="text-xs text-mute">
+                                {hhmm(t.scheduled_time)} – {hhmm(addMinutes(t.scheduled_time, t.duration_minutes))} WIB
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <TaskStatusPill status={t.status} />
+                              <button
+                                type="button"
+                                className="cursor-pointer rounded-md border-[#A8C1D1]/10 bg-[#A8C1D1]/10 px-2 py-1 text-[11px] font-bold text-[#426783] transition hover:opacity-90 active:scale-95"
+                                onClick={() => setStatusSheet({ open: true, task: t })}
+                              >
+                                Edit
+                              </button>
+                            </div>
+                          </div>
+                        ),
+                      }))}
+                    />
+                  )}
+                </div>
+              </div>
+
+              {/* Edit Jadwal Keluarga */}
+              <div className={`p-4 flex flex-col gap-4 ${cardClass}`}>
+                <div className="mb-1 flex items-start justify-between">
+                  <div>
+                    <div className="text-[15px] font-bold text-ink">Edit Jadwal Keluarga</div>
+                    <div className="text-xs text-mute">Buat, ubah, dan hapus data</div>
+                  </div>
+                  <div className="inline-flex rounded-lg bg-[#A8C1D1]/10 p-1">
                     <button
                       type="button"
-                      className="cursor-pointer rounded-md border-[#A8C1D1]/10 bg-[#A8C1D1]/10 px-2 py-1 text-[11px] font-bold text-[#426783] transition hover:opacity-90 active:scale-95"
+                      className={`cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold transition ${scheduleFilter === "harian" ? "bg-navy font-bold text-white shadow-xs" : "text-mute hover:text-ink"
+                        }`}
+                      onClick={() => setScheduleFilter("harian")}
+                    >
+                      Harian
+                    </button>
+                    <button
+                      type="button"
+                      className={`cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold transition ${scheduleFilter === "berulang" ? "bg-navy font-bold text-white shadow-xs" : "text-mute hover:text-ink"
+                        }`}
+                      onClick={() => setScheduleFilter("berulang")}
+                    >
+                      Berulang
+                    </button>
+                  </div>
+                </div>
+
+                {scheduleTasks.length === 0 && (
+                  <div className="py-6.5 px-3.5 text-center text-[13px] text-mute">
+                    Belum ada jadwal di kategori ini.
+                  </div>
+                )}
+                {scheduleTasks.map((t) => (
+                  <div
+                    key={t.id}
+                    className={` flex items-center justify-between rounded-xl bg-linear-to-r from-white to-[#A8C1D1]/10 border border-[#A8C1D1] px-3.5 py-3 text-[13px] ${!t.is_active ? "opacity-60" : ""}`}
+                  >
+                    <div
+                      className="flex-1 min-w-0 cursor-pointer"
                       onClick={() => setTaskSheet({ open: true, existing: t })}
                     >
-                      Edit
-                    </button>
-                    
+                      <div className="flex items-center gap-1.5 font-semibold text-ink">
+                        <span className="truncate">{t.task_name}</span>
+                        {!t.is_active && (
+                          <span className="rounded-full bg-alert-soft px-2 py-0.5 text-[10px] font-bold text-alert">
+                            Nonaktif
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs text-mute">{scheduleLine(t)} WIB</div>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        className="cursor-pointer rounded-md border-[#A8C1D1]/10 bg-[#A8C1D1]/10 px-2 py-1 text-[11px] font-bold text-[#426783] transition hover:opacity-90 active:scale-95"
+                        onClick={() => setTaskSheet({ open: true, existing: t })}
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        type="button"
+                        className="cursor-pointer rounded-md border-[#C65353]/10 bg-[#C65353]/10 px-2 py-1 text-[11px] font-bold text-[#C65353] transition hover:opacity-90 active:scale-95"
+                        onClick={() => setDeleteTask(t)}
+                        aria-label="Hapus"
+                      >
+                        Hapus
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                <button
+                  type="button"
+                  className="mt-2 w-full cursor-pointer rounded-full bg-navy py-3 px-4 text-center text-sm font-bold text-white transition hover:opacity-90 active:scale-[0.99]"
+                  onClick={() => setTaskSheet({ open: true })}
+                >
+                  Tambah
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* TAB INVENTORI */}
+          {tab === "inventori" && (
+            <div className={`p-4 flex flex-col gap-3 ${cardClass}`}>
+              <div>
+                <div className="text-[15px] font-bold text-ink">Daftar Inventori Keluarga</div>
+                <div className="text-xs text-mute">Koordinasi barang milik keluarga</div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                {belongings.length === 0 && (
+                  <div className="py-6.5 px-3.5 text-center text-[13px] text-mute">
+                    Belum ada barang tercatat.
+                  </div>
+                )}
+                {belongings.map((b) => (
+                  <div
+                    key={b.id}
+                    className={`flex items-center justify-between rounded-xl bg-linear-to-r from-white to-[#A8C1D1]/10 border border-[#A8C1D1] px-3.5 py-3 text-[13px]}`}
+                  >
+                    <div
+                      className="flex-1 min-w-0 cursor-pointer"
+                      onClick={() => setBelongingSheet({ open: true, existing: b })}
+                    >
+                      <div className="font-semibold text-ink text-sm">{b.item_name}</div>
+                      <div className="text-xs text-mute">Lokasi Terakhir: {b.last_location}</div>
+                    </div>
                     <button
                       type="button"
                       className="cursor-pointer rounded-md border-[#C65353]/10 bg-[#C65353]/10 px-2 py-1 text-[11px] font-bold text-[#C65353] transition hover:opacity-90 active:scale-95"
-                      onClick={() => setDeleteTask(t)}
+                      onClick={() => setDeleteBelonging(b)}
                       aria-label="Hapus"
                     >
                       Hapus
                     </button>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
 
               <button
                 type="button"
                 className="mt-2 w-full cursor-pointer rounded-full bg-navy py-3 px-4 text-center text-sm font-bold text-white transition hover:opacity-90 active:scale-[0.99]"
-                onClick={() => setTaskSheet({ open: true })}
+                onClick={() => setBelongingSheet({ open: true })}
               >
                 Tambah
               </button>
             </div>
-          </>
-        )}
+          )}
 
-        {/* TAB INVENTORI */}
-        {tab === "inventori" && (
-          <div className="">
-            <div className="text-[15px] font-bold text-ink">Daftar Inventori Keluarga</div>
-            <div className="mb-2.5 text-xs text-mute">Koordinasi barang milik keluarga</div>
+          {tab === "riwayat" && <RiwayatTab patientId={patientId} />}
 
-            {belongings.length === 0 && (
-              <div className="py-6.5 px-3.5 text-center text-[13px] text-mute">
-                Belum ada barang tercatat.
-              </div>
-            )}
-            {belongings.map((b) => (
-              <div
-                key={b.id}
-                className="mb-2 flex items-center justify-between rounded-xl bg-surface-sunken px-3.5 py-3 text-[13px]"
-              >
-                <div
-                  className="flex-1 min-w-0 cursor-pointer"
-                  onClick={() => setBelongingSheet({ open: true, existing: b })}
-                >
-                  <div className="font-semibold text-ink">{b.item_name}</div>
-                  <div className="text-xs text-mute">Lokasi Terakhir: {b.last_location}</div>
-                </div>
-                <button
-                  type="button"
-                  className="cursor-pointer p-1 text-xs text-mute transition hover:text-alert"
-                  onClick={() => setDeleteBelonging(b)}
-                  aria-label="Hapus"
-                >
-                  🗑
-                </button>
-              </div>
-            ))}
+          {/* Bottom Sheets */}
+          <TaskFormSheet
+            open={taskSheet.open}
+            existing={taskSheet.existing}
+            allTasks={allTasks}
+            patientId={patientId}
+            nurseId={user!.id}
+            onClose={() => setTaskSheet({ open: false })}
+            onSaved={() => { loadDetail(); loadAllTasks(); }}
+            onShowToast={showToast}
+          />
+          <TaskStatusSheet
+            open={statusSheet.open}
+            task={statusSheet.task}
+            nurseId={user!.id}
+            onClose={() => setStatusSheet({ open: false, task: null })}
+            onSaved={() => { loadDetail(); loadAllTasks(); }}
+            onShowToast={showToast}
+          />
+          <BelongingFormSheet
+            open={belongingSheet.open}
+            existing={belongingSheet.existing}
+            patientId={patientId}
+            onClose={() => setBelongingSheet({ open: false })}
+            onSaved={loadBelongings}
+            onShowToast={showToast}
+          />
+          <ConfirmSheet
+            open={Boolean(deleteTask)}
+            title="Hapus Aktivitas?"
+            subtitle="Aktivitas akan dihapus dari jadwal"
+            onConfirm={async () => {
+              if (deleteTask) {
+                await api.deleteTask(deleteTask.id);
+                setDeleteTask(null);
+                loadDetail();
+                loadAllTasks();
+              }
+            }}
+            onClose={() => setDeleteTask(null)}
+          />
+          <ConfirmSheet
+            open={Boolean(deleteBelonging)}
+            title="Hapus Barang?"
+            subtitle="Barang akan dihapus dari daftar"
+            onConfirm={async () => {
+              if (deleteBelonging) {
+                await api.deleteBelonging(deleteBelonging.id);
+                setDeleteBelonging(null);
+                loadBelongings();
+              }
+            }}
+            onClose={() => setDeleteBelonging(null)}
+          />
+        </div>
 
-            <button
-              type="button"
-              className="mt-2 w-full cursor-pointer rounded-full bg-navy py-3 px-4 text-center text-sm font-bold text-white transition hover:opacity-90 active:scale-[0.99]"
-              onClick={() => setBelongingSheet({ open: true })}
-            >
-              Tambah
-            </button>
-          </div>
-        )}
-
-        {tab === "riwayat" && <RiwayatTab patientId={patientId} />}
-
-        {/* Bottom Sheets */}
-        <TaskFormSheet
-          open={taskSheet.open}
-          existing={taskSheet.existing}
-          allTasks={allTasks}
-          patientId={patientId}
-          nurseId={user!.id}
-          onClose={() => setTaskSheet({ open: false })}
-          onSaved={() => { loadDetail(); loadAllTasks(); }}
-          onShowToast={showToast}
-        />
-        <TaskStatusSheet
-          open={statusSheet.open}
-          task={statusSheet.task}
-          nurseId={user!.id}
-          onClose={() => setStatusSheet({ open: false, task: null })}
-          onSaved={() => { loadDetail(); loadAllTasks(); }}
-          onShowToast={showToast}
-        />
-        <BelongingFormSheet
-          open={belongingSheet.open}
-          existing={belongingSheet.existing}
-          patientId={patientId}
-          onClose={() => setBelongingSheet({ open: false })}
-          onSaved={loadBelongings}
-          onShowToast={showToast}
-        />
-        <ConfirmSheet
-          open={Boolean(deleteTask)}
-          title="Hapus Aktivitas?"
-          subtitle="Aktivitas akan dihapus dari jadwal"
-          onConfirm={async () => {
-            if (deleteTask) {
-              await api.deleteTask(deleteTask.id);
-              setDeleteTask(null);
-              loadDetail();
-              loadAllTasks();
-            }
-          }}
-          onClose={() => setDeleteTask(null)}
-        />
-        <ConfirmSheet
-          open={Boolean(deleteBelonging)}
-          title="Hapus Barang?"
-          subtitle="Barang akan dihapus dari daftar"
-          onConfirm={async () => {
-            if (deleteBelonging) {
-              await api.deleteBelonging(deleteBelonging.id);
-              setDeleteBelonging(null);
-              loadBelongings();
-            }
-          }}
-          onClose={() => setDeleteBelonging(null)}
-        />
       </div>
     </PhoneLayout>
   );
