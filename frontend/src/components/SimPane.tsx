@@ -7,7 +7,7 @@ export function SimPane() {
       title="Simulator gelang NARAE"
       src={`/sim/index.html?embed=1&v=2&api=${encodeURIComponent(BASE)}`}
       allow="microphone; autoplay"
-      width={1080}
+      width={920}
       height={720}
     />
   );
