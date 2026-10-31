@@ -6,7 +6,13 @@ import type { Patient, PatientWithDevice, PatientTask, PatientBelonging } from "
 export const TODAY_TASKS_SQL = `
   SELECT id, patient_id, created_by, task_name, spoken_instruction, voice_profile_id,
          generated_audio_url, type, days_of_week, scheduled_time, duration_minutes, scheduled_date,
-         is_active, status, created_at
+         is_active,
+         CASE
+           -- Jika statusnya MISSED tapi jam hari ini belum melewati jadwal, tampilkan SCHEDULED (Nanti)
+           WHEN status = 'MISSED' AND (now() AT TIME ZONE 'Asia/Jakarta')::time < scheduled_time THEN 'SCHEDULED'::task_status
+           ELSE status
+         END AS status,
+         created_at
   FROM patient_tasks
   WHERE patient_id = $1
     AND is_active = true
@@ -53,7 +59,22 @@ export const patientRepository = {
   },
 
   async findTodayTasks(patientId: number): Promise<PatientTask[]> {
-    // Otomatis tandai tugas yang sudah melewati batas durasi sebagai MISSED (Terlewat)
+    // 1. Jika tugas berstatus MISSED tapi jam sekarang BELUM melewati jadwal hari ini, kembalikan ke 'SCHEDULED' (Nanti)
+    await pool.query(
+      `UPDATE patient_tasks
+       SET status = 'SCHEDULED'
+       WHERE patient_id = $1
+         AND is_active = true
+         AND status = 'MISSED'
+         AND (
+           (type = 'RECURRING' AND (days_of_week IS NULL OR EXTRACT(ISODOW FROM (now() AT TIME ZONE 'Asia/Jakarta'))::int = ANY(days_of_week)))
+           OR (type = 'ONE_TIME' AND scheduled_date = (now() AT TIME ZONE 'Asia/Jakarta')::date)
+         )
+         AND (now() AT TIME ZONE 'Asia/Jakarta')::time < scheduled_time`,
+      [patientId]
+    );
+
+    // 2. Otomatis tandai tugas yang sudah melewati batas durasi sebagai MISSED (Terlewat)
     await pool.query(
       `UPDATE patient_tasks
        SET status = 'MISSED'
@@ -70,9 +91,32 @@ export const patientRepository = {
     const { rows } = await pool.query<PatientTask>(TODAY_TASKS_SQL, [patientId]);
     return rows;
   },
+
   async findActiveTasks(patientId: number): Promise<PatientTask[]> {
+    // Sinkronkan status sebelum AI membaca task aktif
+    await pool.query(
+      `UPDATE patient_tasks
+       SET status = 'SCHEDULED'
+       WHERE patient_id = $1
+         AND is_active = true
+         AND status = 'MISSED'
+         AND (
+           (type = 'RECURRING' AND (days_of_week IS NULL OR EXTRACT(ISODOW FROM (now() AT TIME ZONE 'Asia/Jakarta'))::int = ANY(days_of_week)))
+           OR (type = 'ONE_TIME' AND scheduled_date = (now() AT TIME ZONE 'Asia/Jakarta')::date)
+         )
+         AND (now() AT TIME ZONE 'Asia/Jakarta')::time < scheduled_time`,
+      [patientId]
+    );
+
     const { rows } = await pool.query<PatientTask>(
-      `SELECT *
+      `SELECT id, patient_id, created_by, task_name, spoken_instruction, voice_profile_id,
+              generated_audio_url, type, days_of_week, scheduled_time, duration_minutes, scheduled_date,
+              is_active,
+              CASE
+                WHEN status = 'MISSED' AND (now() AT TIME ZONE 'Asia/Jakarta')::time < scheduled_time THEN 'SCHEDULED'::task_status
+                ELSE status
+              END AS status,
+              created_at
        FROM patient_tasks
        WHERE patient_id = $1
          AND is_active = true
@@ -96,7 +140,7 @@ export const patientRepository = {
 
   async findBelongingsSummary(patientId: number): Promise<PatientBelonging[]> {
     const { rows } = await pool.query<PatientBelonging>(
-      `SELECT * FROM patient_belongings WHERE patient_id = $1 ORDER BY item_name`,
+      `SELECT item_name, last_location, default_location FROM patient_belongings WHERE patient_id = $1 ORDER BY item_name`,
       [patientId]
     );
     return rows;
