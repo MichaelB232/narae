@@ -161,8 +161,14 @@ INSERT INTO devices (id, device_uid, patient_id, battery_percentage, is_online, 
 
 INSERT INTO patient_belongings (patient_id, item_name, last_location, default_location) VALUES
   (1, 'Dompet',          'Laci meja kerja',          'Laci meja kerja'),
+  (1, 'Jaket wol cokelat', 'Gantungan dekat pintu keluar', 'Lemari pakaian'),
+  (1, 'Obat tetes mata', 'Meja makan',               'Kotak P3K di kamar mandi'),
+  (1, 'Kunci kamar',     'Saku celana abu-abu',      'Meja nakas'),
   (2, 'Kacamata baca',   'Meja nakas kamar 1213',    'Laci meja nakas'),
   (2, 'Tongkat jalan',   'Dekat pintu kamar mandi',  'Samping lemari baju'),
+  (2, 'Tas rajut hijau', 'Kursi teras depan',        'Laci meja rias'),
+  (2, 'Cincin giok',     'Kotak perhiasan di meja rias', 'Kotak perhiasan di meja rias'),
+  (2, 'Buku doa',        'Meja santai ruang tamu',   'Rak buku samping kasur'),
   (3, 'Alat bantu dengar','Meja rias',               'Kotak di laci atas'),
   (4, 'Foto keluarga',   'Meja nakas kamar 1215',    'Meja nakas kamar 1215');
 
@@ -184,10 +190,28 @@ INSERT INTO ai_interaction_logs (patient_id, device_id, patient_speech_transcrip
   (2, 2, 'Jam berapa sekarang?', 'Sekarang pukul 09 lewat 12 menit, hari Senin.', 'none', 820, now() - interval '3 hours'),
   (2, 2, 'Kacamata saya dimana?', 'Kacamata baca Ibu Odette terakhir terlihat di meja nakas kamar 1213.', 'none', 760, now() - interval '5 hours');
 
--- Task ONE_TIME hari ini
+-- Task ONE_TIME hari ini, besok, dua hari lagi, dan tiga hari lagi (untuk uji AI Agent)
 INSERT INTO patient_tasks (patient_id, created_by, task_name, spoken_instruction, voice_profile_id, type, scheduled_date, scheduled_time, duration_minutes, status) VALUES
-  (1, 1, 'Kunjungan Dokter', 'Pak Arthur, hari ini ada jadwal bertemu dokter jam 2 siang.', 1, 'ONE_TIME', CURRENT_DATE, '14:00', 60, 'SCHEDULED'),
-  (4, 2, 'Panggilan Video Keluarga', 'Pak Herman, sebentar lagi ada panggilan video dari cucu.', 1, 'ONE_TIME', CURRENT_DATE, '16:00', 15, 'SCHEDULED');
+  -- Hari Ini (CURRENT_DATE)
+  (1, 1, 'Kunjungan Dokter',           'Pak Arthur, hari ini ada jadwal bertemu dokter jam 2 siang.', 1, 'ONE_TIME', CURRENT_DATE, '14:00', 60, 'SCHEDULED'),
+  (1, 1, 'Minum Teh Sore Bersama',     'Pak Arthur, waktunya minum teh sore hangat di teras.', 1, 'ONE_TIME', CURRENT_DATE, '16:30', 20, 'SCHEDULED'),
+  (2, 2, 'Pemeriksaan Tensi Darah',    'Ibu Odette, suster akan memeriksa tensi darah sebentar ya.', 2, 'ONE_TIME', CURRENT_DATE, '14:30', 15, 'SCHEDULED'),
+  (2, 2, 'Menyiram Tanaman Bunga',     'Ibu Odette, waktunya menyiram tanaman bunga di beranda.', 2, 'ONE_TIME', CURRENT_DATE, '16:00', 20, 'SCHEDULED'),
+  (4, 2, 'Panggilan Video Keluarga',   'Pak Herman, sebentar lagi ada panggilan video dari cucu.', 1, 'ONE_TIME', CURRENT_DATE, '16:00', 15, 'SCHEDULED'),
+
+  -- Besok (CURRENT_DATE + 1)
+  (1, 1, 'Fisioterapi Bahu Mandiri',   'Pak Arthur, besok ada jadwal latihan fisioterapi bahu ya.', 1, 'ONE_TIME', CURRENT_DATE + interval '1 day', '09:30', 45, 'SCHEDULED'),
+  (1, 1, 'Telepon Anak Bungsu',        'Pak Arthur, besok malam ada jadwal telepon dari anak bungsu.', 1, 'ONE_TIME', CURRENT_DATE + interval '1 day', '19:00', 30, 'SCHEDULED'),
+  (2, 2, 'Kontrol Dokter Spesialis Saraf', 'Ibu Odette, besok ada jadwal kontrol ke dokter spesialis saraf.', 2, 'ONE_TIME', CURRENT_DATE + interval '1 day', '10:00', 60, 'SCHEDULED'),
+  (2, 2, 'Merajut Bersama Suster',     'Ibu Odette, besok sore kita merajut taplak bersama ya.', 2, 'ONE_TIME', CURRENT_DATE + interval '1 day', '15:00', 40, 'SCHEDULED'),
+
+  -- Dua Hari Lagi (CURRENT_DATE + 2)
+  (1, 1, 'Jalan Santai di Taman Lansia', 'Pak Arthur, lusa ada jadwal jalan santai di taman lansia.', 1, 'ONE_TIME', CURRENT_DATE + interval '2 day', '16:00', 45, 'SCHEDULED'),
+  (2, 2, 'Senam Kebugaran Lansia',     'Ibu Odette, lusa ada senam kebugaran di aula serbaguna.', 2, 'ONE_TIME', CURRENT_DATE + interval '2 day', '08:00', 30, 'SCHEDULED'),
+
+  -- Tiga Hari Lagi (CURRENT_DATE + 3) (lebih dari 2 hari -> AI sebut tanggal)
+  (1, 1, 'Tes Darah Laboratorium',     'Pak Arthur, tiga hari lagi ada jadwal tes darah laboratorium pagi.', 1, 'ONE_TIME', CURRENT_DATE + interval '3 day', '07:30', 20, 'SCHEDULED'),
+  (2, 2, 'Kunjungan Cucu Tersayang',   'Ibu Odette, tiga hari lagi cucu tersayang akan datang berkunjung.', 2, 'ONE_TIME', CURRENT_DATE + interval '3 day', '13:30', 90, 'SCHEDULED');
 
 -- Contoh panggilan bantuan aktif (untuk demo bottom sheet "Panggilan Menunggu Respons")
 INSERT INTO ai_interaction_logs (patient_id, device_id, patient_speech_transcript, ai_response_text, action_triggered, latency_ms, created_at) VALUES
