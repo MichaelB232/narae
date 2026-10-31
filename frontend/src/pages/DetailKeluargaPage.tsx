@@ -4,6 +4,8 @@ import { api } from "../api/client";
 import { useAuth } from "../auth";
 import { PhoneLayout } from "../components/PhoneLayout";
 import { Avatar } from "../components/Avatar";
+import { BackButton } from "../components/BackButton";
+import { Timeline, TaskStatusPill } from "../components/ActivityTimeline";
 import { TaskFormSheet } from "../components/TaskFormSheet";
 import { TaskStatusSheet } from "../components/TaskStatusSheet";
 import { BelongingFormSheet } from "../components/BelongingFormSheet";
@@ -192,14 +194,7 @@ export function DetailKeluargaPage() {
 
         {/* Header Back & Judul */}
         <div className="mb-3.5 flex items-center gap-2.5">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="flex size-[32px] cursor-pointer items-center justify-center rounded-full bg-none border-[0.5px] text-black transition active:scale-95"
-            aria-label="Kembali"
-          >
-            ‹
-          </button>
+          <BackButton onClick={() => navigate(-1)} />
           <div>
             <h1 className="m-0 text-lg font-bold text-ink">Detail Keluarga</h1>
             <p className="m-0 text-[13px] text-mute">Lihat detail anggota keluarga Anda</p>
@@ -265,60 +260,40 @@ export function DetailKeluargaPage() {
               <div className="mb-2.5 text-xs text-mute">
                 {new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
               </div>
-                <div className="relative ml-1.5">
-                  {detail.todayTasks.length === 0 && (
-                    <div className="py-6.5 px-3.5 text-center text-[13px] text-mute">
-                      Tidak ada jadwal hari ini.
-                    </div>
-                  )}
-                  {detail.todayTasks.map((t, idx) => {
-                    const meta = taskStatusMeta[t.status];
-                    const isMissed = t.status === "MISSED";
-                    const isLast = idx === detail.todayTasks.length - 1;
-
-                    return (
-                      <div
-                        key={t.id}
-                        className={`relative flex items-start gap-3 py-2.5 ${isMissed ? "my-1 rounded-xl bg-alert-soft p-2.5" : ""
-                          }`}
-                      >
-                        {/* Vertical line connecting timeline dots */}
-                        {!isLast && !isMissed && (
-                          <div className="absolute top-4.5 bottom-[-10px] left-1 w-px bg-line" />
-                        )}
-                        <span
-                          className={`relative z-10 mt-1.5 size-2.5 shrink-0 rounded-full ${meta.dotMuted ? "bg-[#c9cdd3]" : "bg-navy"
-                            }`}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-semibold text-ink">{t.task_name}</div>
-                          <div className="text-xs text-mute">
-                            {hhmm(t.scheduled_time)} – {hhmm(addMinutes(t.scheduled_time, t.duration_minutes))} WIB
+                {detail.todayTasks.length === 0 ? (
+                  <div className="py-6.5 px-3.5 text-center text-[13px] text-mute">
+                    Tidak ada jadwal hari ini.
+                  </div>
+                ) : (
+                  <Timeline
+                    dotCenter={20}
+                    items={detail.todayTasks.map((t) => ({
+                      id: t.id,
+                      active: !taskStatusMeta[t.status].dotMuted,
+                      alert: t.status === "MISSED",
+                      children: (
+                        <div className="flex items-start gap-3 py-2.5">
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-semibold text-ink">{t.task_name}</div>
+                            <div className="text-xs text-mute">
+                              {hhmm(t.scheduled_time)} – {hhmm(addMinutes(t.scheduled_time, t.duration_minutes))} WIB
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <TaskStatusPill status={t.status} />
+                            <button
+                              type="button"
+                              className="cursor-pointer rounded-md border border-line bg-navy-soft px-2 py-1 text-[11px] font-bold text-navy transition hover:opacity-90 active:scale-95"
+                              onClick={() => setStatusSheet({ open: true, task: t })}
+                            >
+                              Update Status
+                            </button>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold whitespace-nowrap ${meta.tone === "sage"
-                            ? "bg-sage-soft text-sage"
-                            : meta.tone === "rose"
-                              ? "bg-alert-soft text-alert"
-                              : meta.tone === "navy"
-                                ? "bg-navy-soft text-navy"
-                                : "bg-neutral-badge text-neutral-badge-text"
-                            }`}>
-                            {meta.label}
-                          </span>
-                          <button
-                            type="button"
-                            className="cursor-pointer rounded-md border border-line bg-navy-soft px-2 py-1 text-[11px] font-bold text-navy transition hover:opacity-90 active:scale-95"
-                            onClick={() => setStatusSheet({ open: true, task: t })}
-                          >
-                            Update Status
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                      ),
+                    }))}
+                  />
+                )}
               </div>
             </div>
 

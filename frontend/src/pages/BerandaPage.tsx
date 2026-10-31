@@ -6,6 +6,7 @@ import { PhoneLayout } from "../components/PhoneLayout";
 import { Avatar } from "../components/Avatar";
 import { PatientSwitcher } from "../components/PatientSwitcher";
 import { HelpRequestSheet } from "../components/HelpRequestSheet";
+import { Timeline, TaskStatusPill } from "../components/ActivityTimeline";
 import { taskStatusMeta } from "../statusLabels";
 import { calcAge, hhmm } from "../utils";
 import type {
@@ -37,19 +38,6 @@ const rejectButtonClass =
 
 const navyButtonClass =
   `${buttonBaseClass} border border-[#d5deea] bg-white text-[#344966] hover:bg-[#eaf0f7]`;
-
-const statusToneClasses: Record<string, string> = {
-  navy: "bg-[#e3eaf3] text-[#344966]",
-  sage: "bg-[#e5f1e9] text-[#38664a]",
-  rose: "bg-rose-100 text-rose-700",
-  amber: "bg-amber-100 text-amber-700",
-  muted: "bg-slate-100 text-slate-500",
-  gray: "bg-slate-100 text-slate-600",
-};
-
-function getStatusClass(tone: string) {
-  return statusToneClasses[tone] ?? "bg-slate-100 text-slate-600";
-}
 
 // ======================= MAIN PAGE =======================
 
@@ -396,10 +384,16 @@ function SingleDashboard({
             </p>
           </div>
 
-          <div className="flex flex-col gap-1 p-4">
-            {detail.todayTasks.map((t) => (
-              <TimelineRow key={t.id} task={t} />
-            ))}
+          <div className="p-4">
+            <Timeline
+              dotCenter={16}
+              items={detail.todayTasks.map((t) => ({
+                id: t.id,
+                active: !taskStatusMeta[t.status].dotMuted,
+                alert: t.status === "MISSED",
+                children: <TimelineRow task={t} />,
+              }))}
+            />
           </div>
         </section>
       </div>
@@ -613,19 +607,8 @@ function MultiDashboard({
 // ======================= TIMELINE ROW =======================
 
 function TimelineRow({ task }: { task: TaskItem }) {
-  const meta = taskStatusMeta[task.status];
-  const isMissed = task.status === "MISSED";
-
   return (
-    <div
-      className={`flex items-center gap-3 rounded-lg px-2 py-2 ${isMissed ? "my-0.5 " : ""
-        }`}
-    >
-      <span
-        className={`h-2.5 w-2.5 shrink-0 rounded-full ${meta.dotMuted ? "bg-slate-300" : "bg-[#526b8a]"
-          }`}
-      />
-
+    <div className="flex items-center gap-3 py-2">
       <div className="min-w-0 flex-1">
         <p className="truncate text-xs font-semibold text-slate-800">
           {task.task_name}
@@ -635,13 +618,7 @@ function TimelineRow({ task }: { task: TaskItem }) {
         </p>
       </div>
 
-      <span
-        className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold ${getStatusClass(
-          meta.tone
-        )}`}
-      >
-        {meta.label}
-      </span>
+      <TaskStatusPill status={task.status} compact />
     </div>
   );
 }
