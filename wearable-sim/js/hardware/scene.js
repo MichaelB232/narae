@@ -13,9 +13,13 @@ function rr(w,h,r){const s=new THREE.Shape(),x=-w/2,y=-h/2;s.moveTo(x+r,y);s.lin
 function slab(w,l,r,d,b){const g=new THREE.ExtrudeGeometry(rr(w,l,r),{depth:d,bevelEnabled:true,bevelSize:b,bevelThickness:b,bevelSegments:3,curveSegments:10});g.rotateX(-PI/2);return g}
 function flat(tex,w,h){const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(tex),transparent:true}));m.rotation.x=-PI/2;return m}
 function cnv(w,h,f){const c=document.createElement("canvas");c.width=w;c.height=h;const x=c.getContext("2d");x.strokeStyle=x.fillStyle="#fff";x.lineWidth=8;x.lineCap=x.lineJoin="round";f(x);return c}
-const label=(t,w)=>flat(cnv(256,64,x=>{x.fillStyle="#c9ceda";x.font="700 40px system-ui,sans-serif";x.textAlign="center";x.textBaseline="middle";x.fillText(t,128,34)}),w,w/4);
+const label=(t,w,c="#fff")=>flat(cnv(512,128,x=>{x.fillStyle=c;x.font="700 84px system-ui,sans-serif";x.textAlign="center";x.textBaseline="middle";x.fillText(t,256,68)}),w,w/4);
 const P={};
 function part(key,name,g,ex,pos){g.name=name;if(pos)g.position.copy(pos);const mats=[];g.traverse(o=>{if(o.isMesh){o.userData.key=key;if(o.material.emissive)mats.push(o.material)}});dev.add(g);P[key]={g,name,home:g.position.clone(),ex,mats,pr:0,tp:0,hov:0}}
 // Bayangan
 const sc=cnv(128,128,x=>{const q=x.createRadialGradient(64,64,0,64,64,64);q.addColorStop(0,"rgba(0,0,0,.35)");q.addColorStop(1,"rgba(0,0,0,0)");x.fillStyle=q;x.fillRect(0,0,128,128)});
 const sh=new THREE.Mesh(new THREE.PlaneGeometry(13,13),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(sc),transparent:true,depthWrite:false}));sh.rotation.x=-PI/2;sh.position.y=-5.4;S.add(sh);
+const ped=new THREE.Group();
+{const d=new THREE.Mesh(new THREE.CircleGeometry(3,64),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.55,depthWrite:false}));d.rotation.x=-PI/2;ped.add(d);
+ const r=new THREE.Mesh(new THREE.RingGeometry(3,3.13,96),new THREE.MeshBasicMaterial({color:0x2f6df0,transparent:true,opacity:.35,depthWrite:false}));r.rotation.x=-PI/2;ped.add(r)}
+ped.position.y=-5.42;S.add(ped);

@@ -8,24 +8,34 @@
 </head>
 <body>
 <div id="app">
- <div id="stage"><canvas id="cv"></canvas><div id="tip"></div><div id="pop"></div></div>
- <aside>
-  <h1>Simulasi Device</h1>
-  <p class="mut">Klik tombol biru (Jadwal) atau merah (Bantuan). Seret untuk memutar, scroll untuk zoom.</p>
-  <h2>Jadi pasien siapa?</h2>
-  <select id="patientSelect" style="width:100%;padding:8px;border-radius:8px"></select>
-  <p class="mut" style="font-size:12px">Satu gelang fisik, dipakai simulasikan bergantian — ganti di sini sebelum tekan Jadwal/Bantuan.</p>
-  <h2>Tampilan</h2>
-  <div class="row"><button class="btn ghost" data-v="front">Depan</button><button class="btn ghost" data-v="top">Atas</button><button class="btn ghost" data-v="back">Belakang</button></div>
-  <div class="row" style="margin-top:6px"><button class="btn ghost" id="exb">Pecah komponen</button></div>
-  <h2>Simulasi jaringan Help Mode</h2>
-  <select id="net"><option value="ok">Berhasil terkirim</option><option value="fail">Gagal terkirim</option></select>
-  <h2>Komponen</h2>
-  <div id="list"></div>
-  <h2>Riwayat aktivitas</h2>
-  <div id="log" style="font-size:12px"></div>
-  <button class="btn ghost" id="clr" style="margin-top:6px">Hapus riwayat</button>
-  <p class="mut" style="margin-top:14px;font-size:12px">Tiap komponen adalah grup 3D bernama (objek P). Tambah aksi di Actions, ikat ke komponen lewat CONFIG.bindings.</p>
+ <div id="stage">
+  <canvas id="cv"></canvas><div id="tip"></div><div id="pop"></div>
+  <svg id="annsvg"></svg><div id="anns"></div>
+  <div id="brand"><b>NARAE</b></div>
+  <div id="toolbar" role="toolbar" aria-label="Kontrol tampilan 3D">
+   <button class="tb" data-v="front">Depan</button>
+   <button class="tb" data-v="top">Atas</button>
+   <button class="tb" data-v="back">Belakang</button>
+   <i class="sep"></i>
+   <button class="tb" id="exb">Pecah komponen</button>
+   <button class="tb on" id="rot" aria-pressed="true">Putar otomatis</button>
+   <button class="tb on" id="ann" aria-pressed="true">Penjelasan</button>
+   <i class="sep"></i>
+   <button class="tb" id="pres">Mode presentasi</button>
+  </div>
+  <button class="tb" id="ptoggle" aria-controls="panel" aria-expanded="true">Sembunyikan panel</button>
+ </div>
+ <aside id="panel" aria-label="Panel kontrol">
+  <div class="ph"><h1>Panel kontrol</h1><button class="tb" id="pclose" aria-label="Sembunyikan panel">Tutup</button></div>
+  <details class="sec" open><summary>Pasien</summary>
+   <select id="patientSelect"></select>
+   <p class="hint">Satu gelang dipakai bergantian. Pilih pasien sebelum menekan tombol.</p>
+  </details>
+  <details class="sec"><summary>Komponen</summary><div id="list"></div></details>
+  <details class="sec"><summary>Aktivitas</summary><div id="log"></div><button class="btn ghost" id="clr">Hapus riwayat</button></details>
+  <details class="sec"><summary>Cara pakai</summary>
+   <ul class="hint"><li>Klik/ketuk tombol di model untuk mencoba.</li><li>Seret = putar, scroll = zoom.</li><li><kbd>P</kbd> tampil/sembunyi panel, <kbd>Esc</kbd> keluar mode presentasi.</li></ul>
+  </details>
  </aside>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
@@ -46,6 +56,7 @@
 <script src="js/hardware/parts/contacts.js"></script>
 <script src="js/hardware/buttons.js"></script>
 <script src="js/hardware/hw.js"></script>
+<script src="js/hardware/fx.js"></script>
 <script src="js/ui/popup.js"></script>
 <script src="js/hardware/speechInput.js"></script>
 <script src="js/features/help-mode.js"></script>
@@ -53,6 +64,7 @@
 <script src="js/app/wiring.js"></script>
 <script src="js/app/interaction.js"></script>
 <script src="js/app/panel.js"></script>
+<script src="js/app/annotations.js"></script>
 <script src="js/app/loop.js"></script>
 <script src="js/app/patientSelector.js"></script>
 </body>
