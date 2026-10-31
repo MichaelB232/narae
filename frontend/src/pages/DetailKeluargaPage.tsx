@@ -110,7 +110,7 @@ export function DetailKeluargaPage() {
 
   return (
     <PhoneLayout>
-      <div className="p-4 bg-linear-to-br from-[#EAF1F5] to-[#FAF7F0]">
+      <div className="p-4 pt-[64px] bg-linear-to-br from-[#EAF1F5] to-[#FAF7F0]">
         {toast && <SuccessToast title={toast.title} subtitle={toast.subtitle} />}
 
         {/* Header Back & Judul */}

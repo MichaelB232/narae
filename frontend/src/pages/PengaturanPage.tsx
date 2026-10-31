@@ -11,7 +11,7 @@ export function PengaturanPage() {
 
   return (
     <PhoneLayout>
-      <div className="p-4 bg-linear-to-br from-[#EAF1F5] to-[#FAF7F0]">
+      <div className="p-4 pt-[64px] bg-linear-to-br from-[#EAF1F5] to-[#FAF7F0]">
         <div className="mb-3.5 pt-1.5">
           <h1 className="mb-0.5 text-xl font-bold text-ink">Pengaturan</h1>
           <p className="m-0 text-[13px] text-mute">Akun dan preferensi</p>

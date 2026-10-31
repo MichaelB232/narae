@@ -9,7 +9,7 @@ const icon = "size-5";
 // Navbar bawah: HANYA Beranda, Keluarga, Pengaturan (Laporan sengaja tidak dipakai).
 export function BottomNav() {
   return (
-    <nav className="sticky bottom-0 flex border-t border-line bg-surface pt-2.5 pb-3.5">
+    <nav className="sticky bottom-0 flex border-t border-line bg-surface py-6 shadow-2xl">
       <NavLink to="/" end className={item}>
         <svg className={icon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
         Beranda
