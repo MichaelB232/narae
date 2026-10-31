@@ -202,7 +202,7 @@ export function DetailKeluargaPage() {
         </div>
 
         {/* Kartu Profil Pasien */}
-        <div className="mb-3.5 rounded-2xl border border-line bg-surface p-4">
+        <div className={`p-4 ${cardClass}`}>
           <div className="flex items-center gap-3">
             <Avatar name={detail.patient.name} />
             <div className="flex-1 min-w-0">
@@ -227,7 +227,7 @@ export function DetailKeluargaPage() {
         </div>
 
         {/* Segmented Tabs */}
-        <div className="my-3.5 flex gap-0.5 rounded-xl bg-white p-2 border border-line">
+        <div className={`p-2 flex ${cardClass}`}>
           {(["aktivitas", "inventori"] as const).map((t) => (
             <button
               key={t}
@@ -255,7 +255,7 @@ export function DetailKeluargaPage() {
             <div className="mb-3.5">
               
 
-              <div className="rounded-2xl border border-line bg-surface p-4">
+              <div className={`p-4 ${cardClass}`}>
               <div className="mb-0.5 text-[15px] font-bold text-ink">Aktivitas Hari Ini</div>
               <div className="mb-2.5 text-xs text-mute">
                 {new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
