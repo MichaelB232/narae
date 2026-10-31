@@ -91,7 +91,7 @@ export function BerandaPage() {
     if (sheetItem) return;
 
     const fresh = helpRequests.find(
-      (h) => h.status === "PENDING" && !dismissedIds.has(h.id)
+      (h) => h.status === "PENDING" && h.deadline > Date.now() && !dismissedIds.has(h.id)
     );
 
     if (fresh) setSheetItem(fresh);
@@ -113,11 +113,15 @@ export function BerandaPage() {
     const currentId = Number(sheetItem.id);
     const targetPatientId = sheetItem.patient_id;
 
+    let acknowledged = false;
     try {
-      await api.acknowledgeHelp(currentId);
-      setHelpRequests((prev) =>
-        prev.map((h) => (h.id === currentId ? { ...h, status: "ACKNOWLEDGED" } : h))
-      );
+      const updated: any = await api.acknowledgeHelp(currentId);
+      acknowledged = updated?.status === "ACKNOWLEDGED";
+      if (acknowledged) {
+        setHelpRequests((prev) =>
+          prev.map((h) => (h.id === currentId ? { ...h, status: "ACKNOWLEDGED" } : h))
+        );
+      }
     } catch (e) {
       console.warn("Acknowledge help warning:", e);
     }
@@ -127,7 +131,7 @@ export function BerandaPage() {
 
     loadHelp();
 
-    if (targetPatientId) {
+    if (acknowledged && targetPatientId) {
       navigate(`/keluarga/${targetPatientId}`);
     }
   }
@@ -383,7 +387,7 @@ function MultiDashboard({
   }, [selectedId]);
 
   const activeCalls = helpRequests.filter(
-    (h) => h.status === "PENDING" || h.status === "EXPIRED"
+    (h) => h.status === "PENDING" && h.deadline > Date.now()
   );
 
   const onlineCount = patients.filter((p) => p.is_online).length;

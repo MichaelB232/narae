@@ -28,7 +28,10 @@ export function HelpRequestSheet({
     if (!item) return;
     const remaining = () => Math.max(0, Math.ceil((item.deadline - Date.now()) / 1000));
     setTimeLeft(remaining());
-    if (item.status !== "PENDING" || remaining() === 0) return;
+    if (remaining() === 0) {
+      onLaterRef.current();
+      return;
+    }
 
     const interval = setInterval(() => {
       const left = remaining();
@@ -52,7 +55,7 @@ export function HelpRequestSheet({
         </div>
         <div className="flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800">
           <span className="h-2 w-2 rounded-full bg-amber-500 animate-ping"></span>
-          <span>{timeLeft > 0 ? `${timeLeft} detik` : "Tidak direspons"}</span>
+          <span>{timeLeft} detik</span>
         </div>
       </div>
 
@@ -95,7 +98,7 @@ export function HelpRequestSheet({
           Tangani
         </button>
       </div>
-      <div className="mt-2">
+      {/* <div className="mt-2">
         <button
           type="button"
           className="w-full cursor-pointer rounded-full bg-surface-sunken py-3 px-4 text-center text-sm font-bold text-ink transition hover:opacity-90 active:scale-[0.99]"
@@ -103,7 +106,7 @@ export function HelpRequestSheet({
         >
           Nanti Dulu
         </button>
-      </div>
+      </div> */}
     </BottomSheet>
   );
 }
