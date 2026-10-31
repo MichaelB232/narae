@@ -7,7 +7,8 @@ export const getPatientTasksTool: Tool = {
   declaration: {
     name: "get_patient_tasks",
     description:
-      "Ambil seluruh daftar jadwal kegiatan atau tugas pasien (hari ini maupun jadwal mendatang) " +
+      "Ambil seluruh daftar jadwal kegiatan atau tugas pasien" +
+      "Sesuaikan dengan apa yang patient minta (misalnya hanya hari ini saja, besok atau mungkin spesifik tanggal), jika tidak ketemu cukup balas bahwa tidak memiliki data tsb"+
       "lengkap beserta jam pelaksanaan, durasi aktivitas dalam menit, tanggal, dan statusnya. " +
       "Panggil ini jika pasien bertanya tentang jadwal, kegiatan spesifik, atau menanyakan kegiatan apa selanjutnya/terdekat.",
     parameters: { type: SchemaType.OBJECT, properties: {} },
