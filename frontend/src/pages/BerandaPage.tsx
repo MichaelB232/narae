@@ -425,7 +425,7 @@ function MultiDashboard({
 
 
   {/* ================= KONTEN UTAMA (CARD CONTAINER) ================= */}
-  <div className="px-5 -mt-12 relative z-10 max-w-md mx-auto flex flex-col gap-4">
+  <div className="px-5 -mt-12 relative z-10 max-w-md mx-auto flex flex-col gap-6">
 
     {/* --- Card 1: Profil Pasien & Ringkasan Perangkat --- */}
     <section className={cardClass}>
@@ -474,7 +474,7 @@ function MultiDashboard({
               key={h.id}
               className="relative rounded-2xl border border-[#C65353] bg-[#C65353]/10 p-4 shadow-sm"
             >
-              <span className="absolute right-4 top-4 rounded-full bg-rose-100 px-2.5 py-1 text-[9px] font-bold tracking-wide text-rose-700">
+              <span className="absolute right-4 top-4 rounded-full bg-[#C65353] px-2.5 py-1 text-[9px] font-bold tracking-wide text-white">
                 URGENT
               </span>
 
