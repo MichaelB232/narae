@@ -1,1 +1,29 @@
 @import "tailwindcss";
+@source not "../public";
+
+@theme inline {
+  --color-paper: var(--bg);
+  --color-surface: var(--surface);
+  --color-line: var(--line);
+  --color-ink: var(--text);
+  --color-mute: var(--text-mut);
+  --color-navy: var(--navy);
+  --color-sage: var(--sage);
+  --color-alert: var(--rose);
+  --color-stage: #141820;
+}
+
+@theme {
+  --breakpoint-split: 56rem;
+  --animate-sheet-up: sheet-up 0.22s ease-out;
+  --animate-toast-in: toast-in 0.25s ease-out;
+
+  @keyframes sheet-up {
+    from { transform: translateY(16px); opacity: 0.6; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  @keyframes toast-in {
+    from { transform: translateY(-8px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+}
