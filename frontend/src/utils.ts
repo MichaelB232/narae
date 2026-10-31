@@ -54,11 +54,25 @@ export function isTimeOverlap(
   time1: string,
   dur1: number,
   time2: string,
-  dur2: number
+  dur2: number,
 ): boolean {
   const start1 = toMinutes(time1);
   const end1 = start1 + dur1;
   const start2 = toMinutes(time2);
   const end2 = start2 + dur2;
   return Math.max(start1, start2) < Math.min(end1, end2);
+}
+
+export function isoDayOfWeek(dateISO: string): number {
+  const [y, m, d] = dateISO.split("-").map(Number);
+  const day = new Date(y, m - 1, d).getDay();
+  return day === 0 ? 7 : day;
+}
+
+export function formatDateID(
+  dateISO: string,
+  options: Intl.DateTimeFormatOptions,
+): string {
+  const [y, m, d] = dateISO.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("id-ID", options);
 }

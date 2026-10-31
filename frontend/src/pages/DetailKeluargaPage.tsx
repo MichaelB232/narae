@@ -6,6 +6,7 @@ import { PhoneLayout } from "../components/PhoneLayout";
 import { Avatar } from "../components/Avatar";
 import { BackButton } from "../components/BackButton";
 import { Timeline, TaskStatusPill } from "../components/ActivityTimeline";
+import { DayCarousel, type CarouselDay } from "../components/DayCarousel";
 import { RiwayatTab } from "../components/RiwayatTab";
 import { TaskFormSheet } from "../components/TaskFormSheet";
 import { TaskStatusSheet } from "../components/TaskStatusSheet";
@@ -13,12 +14,32 @@ import { BelongingFormSheet } from "../components/BelongingFormSheet";
 import { ConfirmSheet } from "../components/ConfirmSheet";
 import { SuccessToast } from "../components/Toast";
 import { taskStatusMeta } from "../statusLabels";
-import { calcAge, hhmm, addMinutes } from "../utils";
+import { calcAge, hhmm, addMinutes, getWibDateISO, isoDayOfWeek, formatDateID } from "../utils";
 import type { PatientDetail, TaskItem, Belonging } from "../types";
 
 const DAY_LABELS_SHORT: Record<number, string> = {
   1: "Sen", 2: "Sel", 3: "Rab", 4: "Kam", 5: "Jum", 6: "Sab", 7: "Min",
 };
+
+const CAROUSEL_DAYS = 7;
+
+function tasksForDate(allTasks: TaskItem[], dateISO: string): TaskItem[] {
+  const dow = isoDayOfWeek(dateISO);
+  return allTasks
+    .filter((t) => {
+      if (!t.is_active) return false;
+      if (t.type === "ONE_TIME") return t.scheduled_date?.slice(0, 10) === dateISO;
+      return !t.days_of_week?.length || t.days_of_week.includes(dow);
+    })
+    .map((t) => ({ ...t, status: "SCHEDULED" as const }))
+    .sort((a, b) => a.scheduled_time.localeCompare(b.scheduled_time));
+}
+
+function dayTitle(offset: number, dateISO: string): string {
+  if (offset === 0) return "Aktivitas Hari Ini";
+  if (offset === 1) return "Aktivitas Besok";
+  return `Aktivitas ${formatDateID(dateISO, { weekday: "long" })}`;
+}
 
 
 const navyCardClass =
@@ -188,6 +209,63 @@ export function DetailKeluargaPage() {
     return `${days}, ${hhmm(t.scheduled_time)}`;
   }
 
+  function renderDayTimeline(tasks: TaskItem[], isToday: boolean) {
+    if (tasks.length === 0) {
+      return (
+        <div className="px-3.5 py-6.5 text-center text-[13px] text-mute">
+          {isToday ? "Tidak ada jadwal hari ini." : "Tidak ada jadwal di hari ini."}
+        </div>
+      );
+    }
+
+    return (
+      <Timeline
+        dotCenter={20}
+        items={tasks.map((t) => ({
+          id: t.id,
+          active: !taskStatusMeta[t.status].dotMuted,
+          alert: t.status === "MISSED",
+          children: (
+            <div className="flex items-start gap-3 py-2.5">
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-semibold text-ink">{t.task_name}</div>
+                <div className="text-xs text-mute">
+                  {hhmm(t.scheduled_time)} – {hhmm(addMinutes(t.scheduled_time, t.duration_minutes))} WIB
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <TaskStatusPill status={t.status} />
+                <button
+                  type="button"
+                  className="cursor-pointer rounded-md border-[#A8C1D1]/10 bg-[#A8C1D1]/10 px-2 py-1 text-[11px] font-bold text-[#426783] transition hover:opacity-90 active:scale-95"
+                  onClick={() =>
+                    isToday
+                      ? setStatusSheet({ open: true, task: t })
+                      : setTaskSheet({ open: true, existing: t })
+                  }
+                >
+                  Edit
+                </button>
+              </div>
+            </div>
+          ),
+        }))}
+      />
+    );
+  }
+
+  const carouselDays: CarouselDay[] = Array.from({ length: CAROUSEL_DAYS }, (_, offset) => {
+    const dateISO = getWibDateISO(offset);
+    const isToday = offset === 0;
+    const tasks = isToday ? detail.todayTasks : tasksForDate(allTasks, dateISO);
+    return {
+      dateISO,
+      title: dayTitle(offset, dateISO),
+      subtitle: formatDateID(dateISO, { weekday: "long", day: "numeric", month: "long", year: "numeric" }),
+      content: renderDayTimeline(tasks, isToday),
+    };
+  });
+
   return (
     <PhoneLayout>
       <div className="bg-linear-to-br from-[#EAF1F5] to-[#FAF7F0] min-h-screen">
@@ -269,50 +347,9 @@ export function DetailKeluargaPage() {
                 onConfirm={handleConfirmTask}
               />
 
-              {/* Aktivitas Hari Ini (Timeline) */}
-              <div className="mb-3.5">
-
-
-                <div className={`p-4 ${cardClass}`}>
-                  <div className="mb-0.5 text-[15px] font-bold text-ink">Aktivitas Hari Ini</div>
-                  <div className="mb-2.5 text-xs text-mute">
-                    {new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
-                  </div>
-                  {detail.todayTasks.length === 0 ? (
-                    <div className="py-6.5 px-3.5 text-center text-[13px] text-mute">
-                      Tidak ada jadwal hari ini.
-                    </div>
-                  ) : (
-                    <Timeline
-                      dotCenter={20}
-                      items={detail.todayTasks.map((t) => ({
-                        id: t.id,
-                        active: !taskStatusMeta[t.status].dotMuted,
-                        alert: t.status === "MISSED",
-                        children: (
-                          <div className="flex items-start gap-3 py-2.5">
-                            <div className="min-w-0 flex-1">
-                              <div className="text-sm font-semibold text-ink">{t.task_name}</div>
-                              <div className="text-xs text-mute">
-                                {hhmm(t.scheduled_time)} – {hhmm(addMinutes(t.scheduled_time, t.duration_minutes))} WIB
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <TaskStatusPill status={t.status} />
-                              <button
-                                type="button"
-                                className="cursor-pointer rounded-md border-[#A8C1D1]/10 bg-[#A8C1D1]/10 px-2 py-1 text-[11px] font-bold text-[#426783] transition hover:opacity-90 active:scale-95"
-                                onClick={() => setStatusSheet({ open: true, task: t })}
-                              >
-                                Edit
-                              </button>
-                            </div>
-                          </div>
-                        ),
-                      }))}
-                    />
-                  )}
-                </div>
+              {/* Aktivitas per hari (carousel) */}
+              <div className={`p-4 ${cardClass}`}>
+                <DayCarousel days={carouselDays} />
               </div>
 
               {/* Edit Jadwal Keluarga */}
