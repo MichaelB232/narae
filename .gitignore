@@ -72,3 +72,4 @@ tmp/
 # 7. AI Assistant & Local Tooling Logs
 .gemini/
 .system_generated/
+dist/
