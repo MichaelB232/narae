@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BottomSheet } from "./BottomSheet";
 import { Avatar } from "./Avatar";
 import type { HelpRequestItem } from "../types";
@@ -20,21 +20,24 @@ export function HelpRequestSheet({
   onAcknowledge: () => void;
   onLater: () => void;
 }) {
-  const [timeLeft, setTimeLeft] = useState(10);
+  const [timeLeft, setTimeLeft] = useState(0);
+  const onLaterRef = useRef(onLater);
+  onLaterRef.current = onLater;
 
   useEffect(() => {
     if (!item) return;
-    setTimeLeft(10);
+    const remaining = () => Math.max(0, Math.ceil((item.deadline - Date.now()) / 1000));
+    setTimeLeft(remaining());
+    if (item.status !== "PENDING" || remaining() === 0) return;
+
     const interval = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          onLater();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+      const left = remaining();
+      setTimeLeft(left);
+      if (left === 0) {
+        clearInterval(interval);
+        onLaterRef.current();
+      }
+    }, 250);
     return () => clearInterval(interval);
   }, [item?.id]);
 
@@ -49,7 +52,7 @@ export function HelpRequestSheet({
         </div>
         <div className="flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800">
           <span className="h-2 w-2 rounded-full bg-amber-500 animate-ping"></span>
-          <span>{timeLeft} detik</span>
+          <span>{timeLeft > 0 ? `${timeLeft} detik` : "Tidak direspons"}</span>
         </div>
       </div>
 

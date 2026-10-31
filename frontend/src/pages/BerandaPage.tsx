@@ -71,14 +71,18 @@ export function BerandaPage() {
 
   const loadHelp = useCallback(async () => {
     if (!user) return;
-    setHelpRequests(await api.helpRequests(user.id));
+    const rows = await api.helpRequests(user.id);
+    const receivedAt = Date.now();
+    setHelpRequests(
+      rows.map((r) => ({ ...r, deadline: receivedAt + Number(r.seconds_left) * 1000 }))
+    );
   }, [user]);
 
   useEffect(() => {
     loadPatients();
     loadHelp();
 
-    const t = setInterval(loadHelp, 4000);
+    const t = setInterval(loadHelp, 1000);
     return () => clearInterval(t);
   }, [loadPatients, loadHelp]);
 
@@ -111,6 +115,9 @@ export function BerandaPage() {
 
     try {
       await api.acknowledgeHelp(currentId);
+      setHelpRequests((prev) =>
+        prev.map((h) => (h.id === currentId ? { ...h, status: "ACKNOWLEDGED" } : h))
+      );
     } catch (e) {
       console.warn("Acknowledge help warning:", e);
     }
@@ -376,7 +383,7 @@ function MultiDashboard({
   }, [selectedId]);
 
   const activeCalls = helpRequests.filter(
-    (h) => h.status === "PENDING" || h.status === "ACKNOWLEDGED"
+    (h) => h.status === "PENDING" || h.status === "EXPIRED"
   );
 
   const onlineCount = patients.filter((p) => p.is_online).length;

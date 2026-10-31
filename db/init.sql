@@ -213,12 +213,12 @@ INSERT INTO patient_tasks (patient_id, created_by, task_name, spoken_instruction
   (1, 1, 'Tes Darah Laboratorium',     'Pak Arthur, tiga hari lagi ada jadwal tes darah laboratorium pagi.', 1, 'ONE_TIME', CURRENT_DATE + interval '3 day', '07:30', 20, 'SCHEDULED'),
   (2, 2, 'Kunjungan Cucu Tersayang',   'Ibu Odette, tiga hari lagi cucu tersayang akan datang berkunjung.', 2, 'ONE_TIME', CURRENT_DATE + interval '3 day', '13:30', 90, 'SCHEDULED');
 
--- Contoh panggilan bantuan aktif (untuk demo bottom sheet "Panggilan Menunggu Respons")
+-- Contoh panggilan yang tidak direspons dalam 10 detik (muncul di daftar "Panggilan Menunggu Respons")
 INSERT INTO ai_interaction_logs (patient_id, device_id, patient_speech_transcript, ai_response_text, action_triggered, latency_ms, created_at) VALUES
   (2, 2, 'Tolong panggilkan suster, saya butuh bantuan', 'Baik, saya sampaikan ke perawat sekarang.', 'escalate_to_nurse', 900, now() - interval '4 minutes');
 
 INSERT INTO help_requests (patient_id, device_id, triggered_by_interaction_id, status, expires_at, created_at)
-SELECT 2, 2, id, 'PENDING', now() + interval '11 minutes', now() - interval '4 minutes'
+SELECT 2, 2, id, 'EXPIRED', now() - interval '4 minutes' + interval '10 seconds', now() - interval '4 minutes'
 FROM ai_interaction_logs
 WHERE patient_id = 2 AND patient_speech_transcript LIKE 'Tolong panggilkan suster%'
 ORDER BY id DESC LIMIT 1;

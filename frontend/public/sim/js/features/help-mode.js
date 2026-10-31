@@ -38,79 +38,68 @@ function isExitPhrase(txt){
 
 let converseTurnCount = 0;
 
-function waitForNurseResponse(requestId){
-  let timeLeft = 10;
-  help.s = "sent";
-  setLed("amber", true);
+const NO_ANSWER_MSG="Maaf, perawat sedang tidak dapat dihubungi. Panggilan telah dicatat di sistem sebagai pesan penting.";
+const ACCEPTED_MSG="Perawat sudah menerima panggilan dan sedang dalam perjalanan. Mohon tunggu sebentar ya.";
 
-  function updateStatus(sec){
-    helpView("Menghubungi perawat... Menunggu konfirmasi (" + sec + " detik)");
+async function fetchHelpStatus(requestId){
+  if(!requestId)return null;
+  try{
+    const res=await fetch(CONFIG.storage.url+"/help-requests/"+requestId);
+    return res.ok?(await res.json()).status:null;
+  }catch(err){
+    console.warn("Poll help request failed:",err);
+    return null;
   }
-  updateStatus(timeLeft);
+}
 
-  const pollInterval = setInterval(async () => {
-    timeLeft--;
-    if (help.s === "idle") {
-      clearInterval(pollInterval);
-      return;
+function nurseAccepted(){
+  help.s="ok";
+  micOn=false;
+  setLed("green",false);
+  [660,880,1100].forEach((f,i)=>beep(f,.14,"sine",.12,i*.13));
+  helpView(ACCEPTED_MSG);
+  say(ACCEPTED_MSG,()=>later(()=>helpEnd(),3500));
+}
+
+function nurseNoAnswer(){
+  help.s="fail";
+  micOn=false;
+  setLed("red",true);
+  beep(180,.5,"sawtooth",.1);
+  helpView(NO_ANSWER_MSG);
+  say(NO_ANSWER_MSG,()=>later(()=>helpEnd(),3500));
+}
+
+function waitForNurseResponse(requestId,secondsLeft){
+  const deadline=Date.now()+(Number.isFinite(secondsLeft)?secondsLeft:10)*1000;
+  const remaining=()=>Math.max(0,Math.ceil((deadline-Date.now())/1000));
+  const render=()=>helpView("Menghubungi perawat... Menunggu konfirmasi ("+remaining()+" detik)");
+  let checking=false;
+
+  help.s="sent";
+  setLed("amber",true);
+  render();
+
+  const tick=setInterval(async()=>{
+    if(help.s!=="sent"){clearInterval(tick);return;}
+    if(checking)return;
+    checking=true;
+    const status=await fetchHelpStatus(requestId);
+    checking=false;
+    if(help.s!=="sent"){clearInterval(tick);return;}
+
+    if(status==="ACKNOWLEDGED"){
+      clearInterval(tick);
+      nurseAccepted();
+    }else if(status==="EXPIRED"||status==="RESOLVED"||remaining()<=0){
+      clearInterval(tick);
+      nurseNoAnswer();
+    }else{
+      render();
     }
+  },1000);
 
-    if (requestId) {
-      try {
-        const res = await fetch(CONFIG.storage.url + "/help-requests/" + requestId);
-        if (res.ok) {
-          const reqData = await res.json();
-          if (reqData.status === "ACKNOWLEDGED") {
-            clearInterval(pollInterval);
-            help.s = "ok";
-            micOn = false;
-            setLed("green", false);
-            [660, 880, 1100].forEach((f, i) => beep(f, .14, "sine", .12, i * .13));
-            const msg = "Perawat sudah menerima panggilan dan sedang dalam perjalanan. Mohon tunggu sebentar ya.";
-            helpView(msg);
-            say(msg, () => {
-              later(() => helpEnd(), 3500);
-            });
-            return;
-          } else if (reqData.status === "EXPIRED" || reqData.status === "RESOLVED") {
-            clearInterval(pollInterval);
-            help.s = "fail";
-            micOn = false;
-            setLed("red", true);
-            beep(180, .5, "sawtooth", .1);
-            const msg = "Maaf, perawat sedang tidak dapat dihubungi. Panggilan telah dicatat di sistem sebagai pesan penting.";
-            helpView(msg);
-            say(msg, () => later(() => helpEnd(), 3500));
-            return;
-          }
-        }
-      } catch (err) {
-        console.warn("Poll help request failed:", err);
-      }
-    }
-
-    if (timeLeft <= 0) {
-      clearInterval(pollInterval);
-      if (requestId) {
-        fetch(CONFIG.storage.url + "/help-requests/" + requestId, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: "EXPIRED" })
-        }).catch(() => {});
-      }
-      help.s = "fail";
-      micOn = false;
-      setLed("red", true);
-      beep(180, .5, "sawtooth", .1);
-      const msg = "Maaf, perawat sedang tidak dapat dihubungi. Panggilan telah dicatat di sistem sebagai pesan penting.";
-      helpView(msg);
-      say(msg, () => later(() => helpEnd(), 3500));
-    } else {
-      updateStatus(timeLeft);
-    }
-  }, 1000);
-
-  help.t.push(pollInterval);
+  help.t.push(tick);
 }
 
 async function runConverseTurn(){
@@ -169,14 +158,9 @@ async function runConverseTurn(){
 
     // Kasus Pasien Meminta Panggil Perawat
     micOn=false;
-    help.s="sending";
-    setLed("amber",true);
-    helpView(data.responseText);
-    say(data.responseText, ()=>{
-      if(help.s!=="idle"){
-        waitForNurseResponse(data.helpRequest ? data.helpRequest.id : null);
-      }
-    });
+    const req=data.helpRequest;
+    say(data.responseText);
+    waitForNurseResponse(req?req.id:null,req?req.seconds_left:null);
 
   }catch(err){
     console.error(err);
