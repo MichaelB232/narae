@@ -28,7 +28,7 @@
  <aside id="panel" aria-label="Panel kontrol">
   <div class="ph"><h1>Panel kontrol</h1><button class="tb" id="pclose" aria-label="Sembunyikan panel">Tutup</button></div>
   <details class="sec" open><summary>Pasien</summary>
-   <select id="patientSelect"></select>
+   <select id="patientSelect" aria-label="Pasien yang disimulasikan"></select>
    <p class="hint">Satu gelang dipakai bergantian. Pilih pasien sebelum menekan tombol.</p>
   </details>
   <details class="sec"><summary>Komponen</summary><div id="list"></div></details>
@@ -38,8 +38,8 @@
   </details>
  </aside>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="vendor/three.min.js"></script>
+<script src="vendor/OrbitControls.js"></script>
 <script src="js/config.js"></script>
 <script src="js/core/bus.js"></script>
 <script src="js/core/store.js"></script>

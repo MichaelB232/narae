@@ -18,13 +18,17 @@ const dataProvider: AgentDataProvider = {
       status: t.status,
     }));
   },
-  async getBelongings(patientId: number) {
+  async getBelongingsSummary(patientId: number) {
     const belongings = await patientRepository.findBelongings(patientId);
     return belongings.map((b) => ({
       item_name: b.item_name,
       last_location: b.last_location,
       default_location: b.default_location ?? null,
     }));
+  },
+  async getBelongings(patientId: number) {
+    const belongings = await patientRepository.findBelongings(patientId);
+    return belongings.map((b) => ({ item_name: b.item_name }));
   },
   async reportTaskComplete(patientId: number, taskName: string) {
     const todayTasks = await patientRepository.findTodayTasks(patientId);

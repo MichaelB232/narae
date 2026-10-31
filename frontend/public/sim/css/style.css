@@ -60,3 +60,7 @@ body.present #pop h3{font-size:20px}body.present .big{font-size:24px}body.presen
 .ann{position:absolute;left:0;top:0;width:200px;padding:8px 10px;border-radius:10px;background:var(--card);border:1px solid var(--line);box-shadow:0 4px 14px rgba(0,0,0,.12);font-size:12px;line-height:1.4}
 .ann b{display:block;font-size:13px;margin-bottom:2px}
 .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px}
+body.embed #brand{top:12px;left:12px;pointer-events:auto}
+body.embed #patientSelect{width:210px;box-shadow:0 4px 14px rgba(0,0,0,.12)}
+body.embed .ann{width:170px}
+@media (max-width:1150px){body.embed #toolbar{top:60px;max-width:calc(100% - 24px)}}

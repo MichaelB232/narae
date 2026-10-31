@@ -3,6 +3,7 @@
 
 Pakai:  python3 verify_click.py
 Opsi env: SHOT_DIR=shots   simpan screenshot desktop & mobile
+          SIM_QUERY="?embed=1"  uji mode embed
           THREE_DIR=path   pakai three r128 lokal (folder paket npm `three`) alih-alih CDN
 Butuh:   pip install playwright && playwright install chromium
 """
@@ -16,7 +17,8 @@ import threading
 
 from playwright.sync_api import sync_playwright
 
-ROOT = os.environ.get("SITE_DIR") or os.path.dirname(os.path.abspath(__file__))
+ROOT = os.environ.get("SITE_DIR") or os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "public", "sim")
+QUERY = os.environ.get("SIM_QUERY", "")
 THREE_DIR = os.environ.get("THREE_DIR")
 SHOT_DIR = os.environ.get("SHOT_DIR")
 
@@ -135,7 +137,7 @@ def shots(browser, base):
 
 def main():
     srv, port = serve()
-    base = "http://127.0.0.1:%d/index.html" % port
+    base = "http://127.0.0.1:%d/index.html%s" % (port, QUERY)
     errors = []
     with sync_playwright() as pw:
         browser = pw.chromium.launch(args=["--use-gl=angle", "--use-angle=swiftshader",

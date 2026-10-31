@@ -345,3 +345,13 @@ input, select, textarea { font-family: var(--font); }
   margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--line);
   font-size: 11.5px; color: var(--text-mut); line-height: 1.7;
 }
+
+/* ======== SPLIT: 3D kiri, dashboard kanan ======== */
+.split{display:grid;grid-template-columns:minmax(0,1fr) var(--phone-max);height:100vh;overflow:hidden;background:#141820}
+.sim-col{position:relative;min-width:0}
+.sim-frame{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
+.phone-col{position:relative;height:100vh;overflow:hidden;transform:translateZ(0)}
+.phone-col .phone-shell{height:100%;min-height:0;box-shadow:none}
+.jury-reminder{position:absolute;left:16px;right:16px;bottom:16px;z-index:20;max-width:520px;margin:0 auto;padding:14px 16px;border-radius:14px;background:var(--surface);border:1px solid var(--line);box-shadow:0 8px 28px rgba(0,0,0,.25);font-size:13px;line-height:1.45}
+.jury-reminder ul{margin:6px 0 10px;padding-left:18px}
+.jury-warn{margin:0 0 8px;color:var(--rose);font-weight:600}

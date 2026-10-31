@@ -10,13 +10,14 @@ const annBox=document.getElementById("anns"),annSvg=document.getElementById("ann
 ANN.forEach(a=>{a.v=v3(...a.p);a.el=document.createElement("div");a.el.className="ann";a.el.innerHTML="<b>"+a.t+"</b><span>"+a.d+"</span>";annBox.appendChild(a.el);
  a.ln=document.createElementNS("http://www.w3.org/2000/svg","line");annSvg.appendChild(a.ln)});
 document.getElementById("ann").onclick=e=>{annOn=!annOn;e.currentTarget.classList.toggle("on",annOn);e.currentTarget.setAttribute("aria-pressed",annOn)};
+const CW=EMBED?170:200;
 function updateAnn(){
  const w=stage.clientWidth,h=stage.clientHeight;
- const show=annOn&&w>=900&&help.s==="idle"&&C.position.y>3&&ex<.05;   // semua titik ada di sisi atas bodi → sembunyikan saat dilihat dari bawah/belakang, saat dipecah, atau stage sempit
+ const show=annOn&&w>=(EMBED?800:900)&&help.s==="idle"&&C.position.y>3&&ex<.05;   // semua titik ada di sisi atas bodi → sembunyikan saat dilihat dari bawah/belakang, saat dipecah, atau stage sempit
  annBox.style.opacity=annSvg.style.opacity=show?1:0;if(!show)return;
  C.updateMatrixWorld();
  ANN.forEach(a=>{const vis=P[a.k].g.visible;a.el.style.display=a.ln.style.display=vis?"":"none";if(!vis)return;
   tmpV.copy(a.v).project(C);const x=(tmpV.x+1)/2*w,y=(1-tmpV.y)/2*h,
-   px=a.s==="L"?16:w-216,py=Math.max(84,a.fy*h),lx=a.s==="L"?px+200:px,ly=py+a.el.offsetHeight/2;   // kartu di kolom tepi, tidak menutupi model
+   px=a.s==="L"?16:w-CW-16,py=Math.max(84,a.fy*h),lx=a.s==="L"?px+CW:px,ly=py+a.el.offsetHeight/2;   // kartu di kolom tepi, tidak menutupi model
   a.el.style.transform="translate("+px+"px,"+py+"px)";
   a.ln.setAttribute("x1",x);a.ln.setAttribute("y1",y);a.ln.setAttribute("x2",lx);a.ln.setAttribute("y2",ly)})}

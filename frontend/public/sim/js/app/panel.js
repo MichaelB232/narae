@@ -1,4 +1,6 @@
 // ====== PANEL, TOOLBAR, KAMERA ======
+const EMBED=new URLSearchParams(location.search).has("embed");
+if(EMBED){document.body.classList.add("embed");const b=document.getElementById("brand");b.replaceChildren(document.getElementById("patientSelect"))}
 const list=document.getElementById("list");
 for(const k in P){const lb=document.createElement("label");lb.innerHTML='<input type="checkbox" id="v_'+k+'" checked> '+P[k].name;list.appendChild(lb);lb.firstChild.onchange=e=>{P[k].g.visible=e.target.checked}}
 function setVis(k,v){P[k].g.visible=v;document.getElementById("v_"+k).checked=v}
@@ -22,7 +24,7 @@ document.getElementById("rot").onclick=e=>{rotOn=!rotOn;e.currentTarget.classLis
 const pt=document.getElementById("ptoggle");
 function setPanel(open){document.body.classList.toggle("nopanel",!open);pt.setAttribute("aria-expanded",open);pt.textContent=open?"Sembunyikan panel":"Panel";try{localStorage.setItem("sim:panel",open?"1":"0")}catch(e){}}
 let savedPanel=null;try{savedPanel=localStorage.getItem("sim:panel")}catch(e){}
-setPanel(savedPanel!==null?savedPanel==="1":!matchMedia("(max-width:760px)").matches);
+setPanel(savedPanel!==null?savedPanel==="1":!(EMBED||matchMedia("(max-width:760px)").matches));
 pt.onclick=()=>setPanel(document.body.classList.contains("nopanel"));
 document.getElementById("pclose").onclick=()=>setPanel(false);
 
