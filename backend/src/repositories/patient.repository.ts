@@ -1,8 +1,6 @@
 import { pool } from "../db/pool.js";
 import type { Patient, PatientWithDevice, PatientTask, PatientBelonging } from "../types/domain.js";
 
-// Satu sumber kebenaran untuk "jadwal hari ini": dipakai dashboard DAN agent AI (JIT context),
-// waktu dan hari dievaluasi berdasarkan WIB (Asia/Jakarta).
 export const TODAY_TASKS_SQL = `
   SELECT id, patient_id, created_by, task_name, spoken_instruction, voice_profile_id,
          generated_audio_url, type, days_of_week, scheduled_time, duration_minutes, scheduled_date,

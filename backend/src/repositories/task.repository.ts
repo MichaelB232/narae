@@ -34,8 +34,6 @@ export interface UpdateTaskParams {
 }
 
 export const taskRepository = {
-  // Semua task milik pasien (bukan cuma hari ini) — dipakai section "Edit Jadwal Keluarga"
-  // tempat perawat kelola definisi jadwal, beda dari "Aktivitas Hari Ini" yang cuma instance hari ini.
   async findAllByPatient(patientId: number): Promise<PatientTask[]> {
     const { rows } = await pool.query<PatientTask>(
       `SELECT id, patient_id, created_by, task_name, spoken_instruction, voice_profile_id,
