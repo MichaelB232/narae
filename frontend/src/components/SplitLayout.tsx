@@ -4,12 +4,12 @@ import { JuryReminder } from "./JuryReminder";
 
 export function SplitLayout() {
   return (
-    <div className="split">
+    <div className="flex">
       <section className="sim-col" aria-label="Simulator gelang 3D">
         <SimPane />
         <JuryReminder />
       </section>
-      <section className="phone-col" aria-label="Dashboard perawat">
+      <section className="phone-col flex-1" aria-label="Dashboard perawat">
         <Outlet />
       </section>
     </div>
