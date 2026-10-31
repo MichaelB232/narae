@@ -18,7 +18,7 @@ import type {
 // ======================= SHARED STYLES =======================
 
 const cardClass =
-  "rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden";
+  "rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden";
 
 const navyCardClass =
   "rounded-2xl border border-[#dce3ed] bg-[#f3f6fa] p-4";
@@ -266,46 +266,20 @@ function SingleDashboard({
   }
 
   return (
-    <div className="flex flex-col gap-4 pb-6">
+    <div className="min-h-screen bg-[#FDFBF7] text-slate-800 pb-24 font-sans antialiased">
 
-      {/* GREETING */}
-      <section className="px-1 pt-2">
-        <h1 className="text-xl font-bold tracking-tight text-[#263b56]">
-          Selamat Pagi, {nurseName.split(" ")[1] ?? nurseName}
-        </h1>
-        <p className="mt-1 text-xs text-slate-500">
-          Ringkasan pendampingan pasien untuk hari ini.
-        </p>
-      </section>
+      {/* ================= HEADER BIRU DENGAN LENGKUNGAN ================= */}
+      <div className="relative bg-gradient-to-b from-[#64849B] to-[#7E9EB2] pt-10 pb-20 px-6 text-white">
 
-      {/* PATIENT INFORMATION */}
-      <section className={cardClass}>
-        <div className="flex items-center gap-3 p-4">
-          <Avatar name={detail.patient.name} />
+        {/* Logo */}
+        <h1 className="text-xl font-bold tracking-wider">narae.</h1>
 
-          <div className="min-w-0">
-            <p className="text-[11px] text-slate-500">
-              Kamu Mendampingi
-            </p>
-            <h2 className="truncate text-sm font-bold text-slate-800">
-              {detail.patient.name}
-            </h2>
-          </div>
-
-          <div className="ml-auto flex shrink-0 items-center gap-1.5">
-            <span
-              className={`rounded-full px-2 py-1 text-[10px] font-semibold ${detail.patient.is_online
-                  ? "bg-emerald-50 text-emerald-700"
-                  : "bg-slate-100 text-slate-500"
-                }`}
-            >
-              {detail.patient.is_online ? "• Online" : "• Offline"}
-            </span>
-
-            <span className="rounded-full bg-amber-50 px-2 py-1 text-[10px] font-semibold text-amber-700">
-              {detail.patient.battery_percentage ?? "-"}%
-            </span>
-          </div>
+        {/* Sambutan */}
+        <div className="mt-5">
+          <h2 className="text-2xl font-bold">Selamat Pagi, {nurseName.split(" ")[1] ?? nurseName}</h2>
+          <p className="text-xs text-slate-100 opacity-90 mt-1">
+            Ringkasan pendampingan pasien untuk hari ini.
+          </p>
         </div>
       </section>
 
@@ -438,88 +412,55 @@ function SingleDashboard({
                 : "Hari ini Sedang Berjalan"}
           </h2>
 
-          <p className="text-xs font-medium text-white">
-            {done} dari {total} aktivitas selesai
-          </p>
+        {/* SVG Wave / Kurva di Bagian Bawah Header */}
+        <div className="absolute bottom-0 left-0 right-0 overflow-hidden leading-none pointer-events-none">
+          <svg
+            viewBox="0 0 500 40"
+            preserveAspectRatio="none"
+            className="w-full h-8 text-[#FDFBF7] fill-current"
+          >
+            <path d="M0,0 C150,35 350,35 500,0 L500,40 L0,40 Z"></path>
+          </svg>
         </div>
+      </div>
 
         <div className="flex flex-col gap-1 p-4">
           {detail.todayTasks.map((t) => (
             <TimelineRow key={t.id} task={t} />
           ))}
         </div>
-      </section>
 
-      {/* PENDING TASK CONFIRMATION */}
-      {pendingConfirm && (
-        <section className={navyCardClass}>
-          <h2 className={headingClass}>
-            Menunggu Persetujuan Caregiver
-          </h2>
 
-          <p className="mb-3 mt-1 text-xs leading-relaxed text-slate-500">
-            Pasien melapor tugas telah selesai via Asisten AI di gelang.
-          </p>
+        {/* --- Card 2: Aktivitas Hari Ini --- */}
+        <section className={cardClass}>
+          <div className={headingBlueClass}>
+            <h2 className="text-white">
+              {total === 0
+                ? "Belum Ada Jadwal Hari Ini"
+                : done === total
+                  ? "Hari ini Berjalan Sangat Baik"
+                  : "Hari ini Sedang Berjalan"}
+            </h2>
 
-          <div className="mb-3 flex items-center gap-3">
-            <Avatar name={detail.patient.name} size={40} />
-
-            <div className="min-w-0">
-              <h3 className="text-sm font-bold text-slate-800">
-                {detail.patient.name}
-              </h3>
-
-              <p className="text-[11px] text-slate-500">
-                {age ? `${age} Tahun` : ""}
-                {detail.patient.room_number
-                  ? ` • ${detail.patient.room_number}`
-                  : ""}
-              </p>
-            </div>
+            <p className="text-xs font-medium text-white">
+              {done} dari {total} aktivitas selesai
+            </p>
           </div>
 
-          {/* TASK INFORMATION */}
-          <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3">
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-slate-800">
-                {pendingConfirm.task_name}
-              </p>
 
-              <p className="mt-1 text-xs text-slate-500">
-                {hhmm(pendingConfirm.scheduled_time)}
-              </p>
-            </div>
-
-            <span className="shrink-0 rounded-full bg-[#e3eaf3] px-2.5 py-1 text-[10px] font-semibold text-[#344966]">
-              Laporan AI
-            </span>
+          <div className="flex flex-col gap-1 p-4">
+            {detail.todayTasks.map((t) => (
+              <TimelineRow key={t.id} task={t} />
+            ))}
           </div>
-
-          {/* ACTION BUTTONS */}
-          <div className="mt-3 flex gap-2">
-            <button
-              className={`flex-1 ${approveButtonClass}`}
-              onClick={() => confirm(pendingConfirm.id, true)}
-            >
-              ✓ Setujui Selesai
-            </button>
-
-            <button
-              className={`flex-1 ${rejectButtonClass}`}
-              onClick={() => confirm(pendingConfirm.id, false)}
-            >
-              ✕ Tolak
-            </button>
-          </div>
-
-          <button
-            className={`mt-2 w-full ${navyButtonClass}`}
-            onClick={() => navigate(`/keluarga/${detail.patient.id}`)}
-          >
-            Cek Pasien
-          </button>
         </section>
-      )}
+
+
+      </div>
+
+
+
+
     </div>
   );
 }
@@ -574,23 +515,44 @@ function MultiDashboard({
   }
 
   return (
-    <div className="flex flex-col gap-4 pb-6">
+    <div className="min-h-screen bg-[#FDFBF7] text-slate-800 pb-24 font-sans antialiased">
 
-      {/* GREETING */}
-      <section className="px-1 pt-2">
-        <h1 className="text-xl font-bold tracking-tight text-[#263b56]">
-          Selamat Pagi, {nurseName.split(" ")[1] ?? nurseName}
-        </h1>
+  {/* ================= HEADER BIRU DENGAN LENGKUNGAN ================= */}
+  <div className="relative bg-gradient-to-b from-[#64849B] to-[#7E9EB2] pt-10 pb-20 px-6 text-white">
 
-        <p className="mt-1 text-xs text-slate-500">
-          Ringkasan pendampingan pasien untuk hari ini.
-        </p>
-      </section>
+    {/* Logo */}
+    <h1 className="text-xl font-bold tracking-wider">narae.</h1>
 
-      {/* SUMMARY */}
-      <section className={cardClass}>
-        <div className="flex divide-x divide-slate-200">
-          <div className="min-w-0 flex-1 pr-3">
+    {/* Sambutan */}
+    <div className="mt-5">
+      <h2 className="text-2xl font-bold">
+        Selamat Pagi, {nurseName.split(" ")[1] ?? nurseName}
+      </h2>
+      <p className="text-xs text-slate-100 opacity-90 mt-1">
+        Ringkasan pendampingan pasien untuk hari ini.
+      </p>
+    </div>
+
+    {/* SVG Wave / Kurva di Bagian Bawah Header */}
+    <div className="absolute bottom-0 left-0 right-0 overflow-hidden leading-none pointer-events-none">
+      <svg
+        viewBox="0 0 500 40"
+        preserveAspectRatio="none"
+        className="w-full h-8 text-[#FDFBF7] fill-current"
+      >
+        <path d="M0,0 C150,35 350,35 500,0 L500,40 L0,40 Z"></path>
+      </svg>
+    </div>
+  </div>
+
+
+  {/* ================= KONTEN UTAMA (CARD CONTAINER) ================= */}
+  <div className="px-5 -mt-12 relative z-10 max-w-md mx-auto flex flex-col gap-6">
+
+    {/* --- Card 1: Profil Pasien & Ringkasan Perangkat --- */}
+    <section className={cardClass}>
+        <div className="flex">
+          <div className="min-w-0 flex-1 p-4">
             <p className="text-xs text-slate-500">
               Pasien Terdaftar
             </p>
@@ -599,12 +561,12 @@ function MultiDashboard({
               {patients.length}
             </p>
 
-            <p className="mt-1 text-[11px] text-slate-500">
+            <p className="mt-1 text-[11px] text-emerald-700">
               {onlineCount} perangkat online
             </p>
           </div>
 
-          <div className="min-w-0 flex-1 pl-3">
+          <div className="min-w-0 flex-1 p-4">
             <p className="text-xs text-slate-500">
               Tugas Hari Ini
             </p>
@@ -693,125 +655,142 @@ function MultiDashboard({
             Panggilan Menunggu Respons
           </h2>
 
-          <div className="flex flex-col gap-3">
-            {activeCalls.map((h) => (
-              <div
-                key={h.id}
-                className="relative rounded-2xl border border-rose-200 bg-rose-50 p-4"
-              >
-                <span className="absolute right-4 top-4 rounded-full bg-rose-100 px-2.5 py-1 text-[9px] font-bold tracking-wide text-rose-700">
-                  URGENT
-                </span>
-
-                <div className="mb-3 flex items-center gap-3 pr-16">
-                  <Avatar name={h.patient_name} />
-
-                  <div className="min-w-0">
-                    <h3 className="truncate text-sm font-bold text-slate-800">
-                      {h.patient_name}
-                    </h3>
-
-                    <p className="text-xs text-slate-500">
-                      {h.room_number ?? ""}
-                    </p>
-                  </div>
-                </div>
-
-                {h.patient_speech_transcript && (
-                  <div className="mb-3 rounded-xl border border-rose-100 bg-white p-3">
-                    <p className="mb-1 text-[10px] font-bold tracking-wide text-rose-600">
-                      PESAN PASIEN
-                    </p>
-
-                    <p className="text-xs leading-relaxed text-slate-700">
-                      "{h.patient_speech_transcript}"
-                    </p>
-                  </div>
-                )}
-
-                <button
-                  className={`${buttonBaseClass} w-full bg-rose-600 text-white hover:bg-rose-700`}
-                  onClick={() => onOpenCall(h)}
-                >
-                  Tangani
-                </button>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* PENDING TASK CONFIRMATIONS */}
-      {pendingMulti.length > 0 && (
-        <section className={navyCardClass}>
-          <h2 className={headingClass}>
-            Menunggu Persetujuan Caregiver
-          </h2>
-
-          <p className="mb-3 mt-1 text-xs leading-relaxed text-slate-500">
-            Pasien {selectedDetail?.patient.name} melapor tugas selesai via Asisten AI.
-          </p>
-
-          <div className="flex flex-col gap-3">
-            {pendingMulti.map((t) => (
-              <div
-                key={t.id}
-                className="border-t border-slate-200 pt-3 first:border-0 first:pt-0"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="min-w-0">
-                    <h3 className="text-sm font-bold text-slate-800">
-                      {t.task_name}
-                    </h3>
-
-                    <p className="mt-1 text-[11px] text-slate-500">
-                      Jadwal: {hhmm(t.scheduled_time)}
-                    </p>
-                  </div>
-
-                  <span className="shrink-0 rounded-full bg-[#e3eaf3] px-2.5 py-1 text-[10px] font-semibold text-[#344966]">
-                    Laporan AI
-                  </span>
-                </div>
-
-                <div className="mt-3 flex gap-2">
-                  <button
-                    className={`flex-1 ${approveButtonClass}`}
-                    onClick={() => handleConfirmMulti(t.id, true)}
-                  >
-                    ✓ Setujui Selesai
-                  </button>
-
-                  <button
-                    className={`flex-1 ${rejectButtonClass}`}
-                    onClick={() => handleConfirmMulti(t.id, false)}
-                  >
-                    ✕ Tolak
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* PATIENT SCHEDULE */}
-      <section className={navyCardClass}>
-        <h2 className={headingClass}>
-          Jadwal Hari Ini
+    {/* --- PANGGILAN MENUNGGU RESPON (URGENT) --- */}
+    {activeCalls.length > 0 && (
+      <section className="space-y-3">
+        <h2 className="text-sm font-bold text-slate-800">
+          Panggilan Menunggu Respons
         </h2>
 
-        <p className="mb-3 mt-1 text-xs text-slate-500">
-          Lihat jadwal anggota keluarga
+        <div className="flex flex-col gap-3">
+          {activeCalls.map((h) => (
+            <div
+              key={h.id}
+              className="relative rounded-2xl border border-[#C65353] bg-[#C65353]/10 p-4 shadow-sm"
+            >
+              <span className="absolute right-4 top-4 rounded-full bg-[#C65353] px-2.5 py-1 text-[9px] font-bold tracking-wide text-white">
+                URGENT
+              </span>
+
+              <div className="mb-3 flex items-center gap-3 pr-16">
+                <Avatar name={h.patient_name} />
+
+                <div className="min-w-0">
+                  <h3 className="truncate text-sm font-bold text-slate-800">
+                    {h.patient_name}
+                  </h3>
+
+                  <p className="text-xs text-slate-500">
+                    {h.room_number ?? ""}
+                  </p>
+                </div>
+              </div>
+
+              {h.patient_speech_transcript && (
+                <div className="mb-3 rounded-xl border border-rose-100 bg-white p-3">
+                  <p className="mb-1 text-[10px] font-bold tracking-wide text-[#C65353]">
+                    PESAN PASIEN
+                  </p>
+
+                  <p className="text-xs leading-relaxed text-slate-700">
+                    "{h.patient_speech_transcript}"
+                  </p>
+                </div>
+              )}
+
+              <button
+                className={`${buttonBaseClass} w-full bg-[#C65353] text-white hover:bg-[#ab4949]`}
+                onClick={() => onOpenCall(h)}
+              >
+                Tangani
+              </button>
+            </div>
+          ))}
+        </div>
+      </section>
+    )}
+
+
+    {/* --- MENUNGGU PERSETUJUAN CAREGIVER --- */}
+    {pendingMulti.length > 0 && (
+      <section className={navyCardClass}>
+        <h2 className={headingClass}>
+          Menunggu Persetujuan Caregiver
+        </h2>
+
+        <p className="mb-3 mt-1 text-xs leading-relaxed text-slate-500">
+          Pasien {selectedDetail?.patient.name} melapor tugas selesai via Asisten AI.
         </p>
 
-        <PatientSwitcher
-          patients={patients}
-          selectedId={selectedId}
-          onChange={setSelectedId}
-        />
+        <div className="flex flex-col gap-3">
+          {pendingMulti.map((t) => (
+            <div
+              key={t.id}
+              className="border-t border-slate-200 pt-3 first:border-0 first:pt-0"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <h3 className="text-sm font-bold text-slate-800">
+                    {t.task_name}
+                  </h3>
 
-        <div className="mt-3 flex flex-col gap-1">
+                  <p className="mt-1 text-[11px] text-slate-500">
+                    Jadwal: {hhmm(t.scheduled_time)}
+                  </p>
+                </div>
+
+                <span className="shrink-0 rounded-full bg-[#e3eaf3] px-2.5 py-1 text-[10px] font-semibold text-[#344966]">
+                  Laporan AI
+                </span>
+              </div>
+
+              <div className="mt-3 flex gap-2">
+                <button
+                  className={`flex-1 ${approveButtonClass}`}
+                  onClick={() => handleConfirmMulti(t.id, true)}
+                >
+                  ✓ Setujui Selesai
+                </button>
+
+                <button
+                  className={`flex-1 ${rejectButtonClass}`}
+                  onClick={() => handleConfirmMulti(t.id, false)}
+                >
+                  ✕ Tolak
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    )}
+
+
+    {/* --- CARD 2: AKTIVITAS / JADWAL HARI INI --- */}
+    <section className={cardClass}>
+      <div className={headingBlueClass}>
+        <h2 className="text-sm font-bold text-white">
+          {selectedDetail?.todayTasks.length === 0
+            ? "Belum Ada Jadwal Hari Ini"
+            : "Hari ini Berjalan Sangat Baik"}
+        </h2>
+
+        <p className="text-xs opacity-90 mt-0.5  text-white">
+          {selectedDetail?.todayTasks.filter(t =>  t.status === 'CONFIRMED_BY_NURSE').length ?? 0} dari {selectedDetail?.todayTasks.length ?? 0} aktivitas selesai
+        </p>
+      </div>
+
+      <div className="p-4">
+        {/* Switcher Pasien jika ingin tetap bisa ganti-ganti */}
+        <div className="mb-3">
+          <PatientSwitcher
+            patients={patients}
+            selectedId={selectedId}
+            onChange={setSelectedId}
+          />
+        </div>
+
+        <div className="flex flex-col gap-1">
           {!selectedDetail && (
             <p className="py-3 text-center text-xs text-slate-400">
               Memuat jadwal…
@@ -819,24 +798,27 @@ function MultiDashboard({
           )}
 
           {selectedDetail && selectedDetail.todayTasks.length === 0 && (
-            <div className="rounded-xl bg-white/70 px-3 py-5 text-center text-xs text-slate-500">
+            <div className="rounded-xl bg-slate-50 px-3 py-5 text-center text-xs text-slate-500">
               Tidak ada jadwal hari ini.
             </div>
           )}
 
-          {selectedDetail?.todayTasks.slice(0, 4).map((t) => (
+          {selectedDetail?.todayTasks.map((t) => (
             <TimelineRow key={t.id} task={t} />
           ))}
         </div>
 
         <button
-          className={`mt-3 w-full ${navyButtonClass}`}
+          className={`mt-4 w-full ${navyButtonClass ?? "bg-[#64849B] text-white py-2.5 rounded-xl text-xs font-semibold"}`}
           onClick={() => navigate(`/keluarga/${selectedId}`)}
         >
           Lihat Semua
         </button>
-      </section>
-    </div>
+      </div>
+    </section>
+
+  </div>
+</div>
   );
 }
 
