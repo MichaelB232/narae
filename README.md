@@ -1,164 +1,141 @@
-# NARAE — rebuild end-to-end (TypeScript backend berlapis, agent modular, FE React, mic asli)
+# NARAE — Smart Caregiver & Wearable Companion Rebuild (Full-Stack)
 
-## Struktur folder
+Aplikasi pendamping lansia dan keluarga berbasis AI Agent (Google Gemini Function Calling), backend berlapis (Node.js/Express + TypeScript + PostgreSQL), dan dashboard caregiver (React 18 + Vite + Tailwind CSS v4) dengan simulator gelang 3D interaktif bersuara asli.
+
+---
+
+## Struktur Folder
 
 ```
 narae/
-├─ docker-compose.yml       db + backend + frontend
-├─ .env.example             isi GEMINI_API_KEY di sini
-├─ db/init.sql              schema final + seed 2 skenario akun
-├─ backend/                 TypeScript, berlapis: repositories → services → controllers → routes
-├─ agent/                   paket TERPISAH dari backend: tools modular + prompt + Gemini client
-└─ frontend/                React + Vite + TypeScript, struktur ikut Figma
-   └─ public/sim/           simulator gelang 3D — mic ASLI (Web Speech API), bisa ganti-ganti pasien
+├─ docker-compose.yml       db (Postgres 16) + backend + frontend
+├─ .env.example             template konfigurasi environment
+├─ db/
+│  ├─ init.sql              schema final + seed skenario akun & jadwal multi-hari
+│  └─ seed_additional.sql   skrip seed tambahan untuk inventori & tugas masa depan
+├─ backend/                 TypeScript berlapis: routes → controllers → services → repositories → db
+│  ├─ src/utils/date.ts     utilitas format tanggal ISO YYYY-MM-DD yang aman
+│  └─ src/config/env.ts     konfigurasi environment otomatis
+├─ agent/                   paket AI terpisah (@narae/agent): tools modular + prompt + Gemini client
+│  ├─ src/tools/            getPatientTasks, getBelongings, getBelongingsSummary, getCurrentDateTime, requestNurseCall, reportTaskComplete
+│  └─ src/prompt/           systemPrompt.ts (guardrails & aturan respons) + jitContext.ts
+└─ frontend/                React + Vite + TypeScript (Full Tailwind CSS v4)
+   ├─ src/components/       BottomSheet, TaskFormSheet, TaskConflictSheet, TaskStatusSheet, dll
+   ├─ src/pages/            BerandaPage, DetailKeluargaPage, KeluargaPage, LoginPage, PengaturanPage
+   └─ public/sim/           Simulator gelang 3D (Three.js) — input mic asli (Web Speech API)
 ```
 
-## 1. Jalankan
+---
 
+## 1. Cara Menjalankan
+
+### Opsi A: Menggunakan Docker Compose (Instan)
 ```bash
 cp .env.example .env
-# isi GEMINI_API_KEY di .env (ambil dari https://aistudio.google.com/apikey)
+# Isi GEMINI_API_KEY di file .env (ambil dari https://aistudio.google.com/apikey)
 
 docker compose up --build
 ```
+- **Backend API**: `http://localhost:4000` (uji status via `curl http://localhost:4000/api/health`)
+- **Frontend Dashboard & Simulator**: `http://localhost:5173` (buka di Google Chrome atau Microsoft Edge untuk dukungan Web Speech API)
 
-- Backend: `http://localhost:4000` (cek `curl localhost:4000/api/health`)
-- Frontend: `http://localhost:5173` — satu halaman terbagi dua: **kiri** simulator gelang 3D,
-  **kanan** dashboard perawat. Tidak perlu `npx serve`; simulator dilayani dari
-  `frontend/public/sim/`. Buka di **Chrome** (Web Speech API paling stabil di Chrome;
-  Safari/Firefox terbatas) dan izinkan mikrofon.
-- Untuk deploy online, set `VITE_API_URL` (alamat API publik, **https**) di `.env` sebelum
-  `docker compose up --build`; nilai itu dipakai dashboard dan simulator.
+### Opsi B: Menjalankan Manual di Terminal Terpisah (Hot Reload Aktif)
+Cocok untuk pengembangan cepat frontend dan backend secara independen:
 
-## 2. Akun demo (login di `localhost:5173`)
+1. **Jalankan Database PostgreSQL**:
+   ```bash
+   docker compose up db -d
+   ```
+2. **Terminal 1 — Backend (Port 4000)**:
+   ```bash
+   cd backend
+   npm run build
+   npm run dev
+   ```
+3. **Terminal 2 — Frontend (Port 5173)**:
+   ```bash
+   cd frontend
+   npm run dev
+   ```
+   *Setiap perubahan kode di `frontend/src/` akan langsung diperbarui di browser seketika (Hot Module Replacement).*
 
-| Username | Password | Skenario |
+---
+
+## 2. Akun Demo untuk Pengujian (`localhost:5173`)
+
+| Username | Password | Skenario Pengujian |
 |---|---|---|
-| `suster.satu` | `narae123` | 1 perawat : **1 pasien** (Pak Arthur) — dashboard fokus ke satu pasien |
-| `suster.banyak` | `narae123` | 1 perawat : **3 pasien** (Ibu Odette, Ibu Siti, Pak Herman) — dashboard daftar pasien + antrean panggilan |
+| `suster.satu` | `narae123` | **1 Perawat : 1 Pasien** (Pak Arthur) — dashboard langsung fokus ke satu pasien |
+| `suster.banyak` | `narae123` | **1 Perawat : 3 Pasien** (Ibu Odette, Ibu Siti, Pak Herman) — dashboard switcher pasien & antrean panggilan |
 
-Dashboard otomatis pakai layout yang sesuai berdasarkan jumlah pasien milik akun yang login —
-bukan dua halaman terpisah yang harus kamu pilih manual.
+---
 
-## 3. Backend — lapisan & endpoint
+## 3. Backend — Lapisan & Endpoint Utama
 
-Tiap fungsi di `services/` dan `controllers/` punya komentar `// -> METHOD /api/...` di baris
-pemanggilannya di `routes/*.ts` supaya gampang dilacak nembak ke endpoint apa:
-
+Arsitektur backend memisahkan tanggung jawab secara ketat:
 ```
-repositories/   query SQL mentah, tidak ada logika bisnis
-services/       logika bisnis (mis. taskService.confirmByNurse menulis status + audit trail)
-controllers/    HTTP in/out, parsing request/response
-routes/         pemetaan endpoint, 1 baris = 1 endpoint
+routes/ ──> controllers/ ──> services/ ──> repositories/ ──> PostgreSQL
+                                  │
+                                  └──> @narae/agent (Gemini Function Calling)
 ```
 
-| Endpoint | Fungsi |
+- **`repositories/`**: Query SQL mentah dengan parameter `$1, $2` yang aman, evaluasi waktu berbasis zona WIB (`Asia/Jakarta`), dan update otomatis status `MISSED`.
+- **`services/`**: Logika bisnis, penanganan siklus tugas harian, dan penyuntikan interface `AgentDataProvider` ke modul AI Agent.
+- **`controllers/`**: Validasi payload request dan response status HTTP.
+- **`routes/`**: Pemetaan rute RESTful.
+
+| Method & Endpoint | Fungsi |
 |---|---|
-| `POST /api/auth/login` | login, balas `{user, token}` (token demo, lihat batasan di bawah) |
-| `GET /api/patients?nurseId=` | daftar pasien milik perawat |
-| `GET /api/patients/:id` | profil + jadwal hari ini + barang (konteks closed-world yang sama dipakai AI) |
-| `POST /api/tasks` | perawat bikin task baru |
-| `POST /api/tasks/:id/report` | pasien lapor task selesai (klaim) |
-| `PATCH /api/tasks/:id/confirm` | perawat konfirmasi/tolak (final) |
-| `GET /api/tasks/:id/history` | audit trail task |
-| `GET /api/help-requests?nurseId=&status=` | antrean panggilan bantuan |
-| `POST /api/help-requests` | dipicu **tombol fisik** |
-| `PATCH /api/help-requests/:id` | acknowledge / resolve |
-| `POST /api/ai/converse` | satu-satunya pintu ke modul `agent/` |
-| `GET /api/devices`, `POST /api/devices/:uid/heartbeat` | dipakai simulator |
+| `POST /api/auth/login` | Autentikasi perawat, mengembalikan data user & token sesi |
+| `GET /api/patients?nurseId=` | Mengambil daftar pasien di bawah pendampingan perawat |
+| `GET /api/patients/:id` | Detail profil pasien, aktivitas hari ini, inventori, dan catatan klinis |
+| `POST /api/tasks` | Membuat jadwal baru (mendukung jadwal berulang atau sekali jalan dengan tanggal fleksibel) |
+| `PATCH /api/tasks/:id` | Mengubah jadwal (nama, jam, durasi, status aktif `is_active`, tipe, tanggal `scheduled_date`) |
+| `PATCH /api/tasks/:id/confirm` | Konfirmasi perawat (Selesai / Tolak) beserta catatan alasan |
+| `POST /api/tasks/:id/report` | Pasien melapor aktivitas selesai via suara (klaim menunggu konfirmasi perawat) |
+| `GET /api/help-requests?nurseId=&status=` | Mengambil daftar panggilan bantuan pasien yang menunggu respons |
+| `PATCH /api/help-requests/:id` | Mengubah status tiket panggilan (`ACKNOWLEDGED` / `RESOLVED`) |
+| `GET /api/belongings?patientId=` | Mengambil daftar barang bawaan pasien |
+| `POST /api/belongings` | Menambahkan barang bawaan baru beserta lokasi terakhir dan default |
+| `POST /api/ai/converse` | Gerbang percakapan audio/teks dari gelang ke model Gemini AI |
 
-## 4. Modul `agent/` — terpisah dari backend
+---
 
-```
-agent/src/
-├─ tools/                 4 tool, masing-masing 1 file + 1 kalimat deskripsi
-│  ├─ getPatientTasks.tool.ts     "Mengambil daftar jadwal tugas pasien (hari ini dan mendatang)..."
-│  ├─ getBelongings.tool.ts       "Mencari lokasi terakhir barang milik pasien..."
-│  ├─ getCurrentDateTime.tool.ts  "Memberi tahu tanggal dan jam saat ini..."
-│  └─ requestNurseCall.tool.ts    "Menandai bahwa pasien secara eksplisit minta..."
-├─ prompt/
-│  ├─ systemPrompt.ts     ATURAN STATIS (guardrail) — tidak pernah berubah per pasien
-│  └─ jitContext.ts       INI bagian JIT / prompt injection — dibangun ulang tiap request,
-│                           berisi identitas pasien + catatan perawatan saat itu juga
-├─ geminiClient.ts         wrapper tipis ke @google/generative-ai
-└─ agent.ts                orchestrator: jalanin tool-calling loop Gemini
-```
+## 4. Modul AI Agent (`agent/`)
 
-Ini pakai **real Gemini function-calling** — model memanggil tool kapan dia butuh data (misal
-cuma panggil `get_patient_tasks` kalau pasien nanya jadwal), bukan semua data di-dump ke prompt
-di awal. `agent/` sama sekali tidak tahu soal Postgres — backend (`backend/src/services/ai.service.ts`)
-yang menyuntikkan implementasi `AgentDataProvider` (lihat komentar di file itu kenapa didesain begitu).
+Modul asisten AI bekerja secara terisolasi dan mandiri (*closed-world*), tidak bergantung langsung pada driver PostgreSQL, melainkan melalui kontrak `AgentDataProvider`.
 
-Escalasi ke `help_requests` HANYA terjadi kalau model memanggil tool `request_nurse_call` —
-tidak otomatis terjadi hanya karena AI tidak tahu jawaban (lihat aturan di `systemPrompt.ts`).
+### Fitur Function Calling Gemini:
+1. **`get_patient_tasks`**: Mengambil seluruh daftar kegiatan aktif pasien (hari ini dan hari-hari mendatang) beserta jam mulai, durasi menit, dan tanggalnya.
+2. **`get_belongings_summary`**: Mencari letak terakhir barang pasien beserta tempat biasanya ditaruh saat pasien bertanya *"di mana barang saya?"*.
+3. **`get_belongings`**: Menyebutkan daftar barang-barang yang dimiliki pasien di database saat bertanya *"barang saya apa saja?"*.
+4. **`get_current_datetime`**: Mengetahui jam, hari, dan tanggal saat ini berbasis WIB (`Asia/Jakarta`).
+5. **`report_task_complete`**: Mencatat klaim suara pasien bahwa suatu aktivitas telah dilakukan (*"sudah minum obat"*, dsb).
+6. **`request_nurse_call`**: Meminta bantuan panggilan darurat perawat hanya jika pasien secara eksplisit meminta tolong.
 
-## 5. Frontend — dibangun ulang mengikuti screenshot Figma asli (bukan tebakan nama layer)
+### Aturan Guardrails AI (`systemPrompt.ts`):
+- **Pertanyaan Spesifik Jadwal**: AI menyebutkan nama tugas, jam mulai, durasi aktivitas, dan penanda waktu relatif (*"hari ini"*, *"besok"*, atau format tanggal jika > 2 hari).
+- **Pertanyaan Tugas Terdekat / Setelah Ini**: AI mencocokkan waktu sekarang dengan jadwal berikutnya yang belum selesai dan memberitahu pasien kegiatan apa yang paling dekat.
+- **Pertanyaan Kemampuan AI**: Saat pasien bertanya *"kamu bisa apa?"* atau *"apa fungsi kamu?"*, AI langsung menjawab ramah dan ringkas dalam 1–2 kalimat tanpa memanggil tool.
+- **Larangan Medis**: Tidak memberikan dosis obat, diagnosis, atau anjuran medis independen (selalu diarahkan ke perawat).
+- **Format Output**: Selalu teks santai polos yang nyaman dibacakan oleh Text-to-Speech (TTS), tanpa format markdown/JSON.
 
-Revisi ini membangun ulang seluruh UI dari screenshot asli yang kamu kirim (bukan cuma metadata
-teks Figma seperti sebelumnya). Palet warna diambil lewat sampling pixel langsung dari
-screenshot kamu — lihat `frontend/src/styles/global.css`.
+---
 
-**Halaman & komponen, dipetakan ke setiap screenshot:**
-- `pages/BerandaPage.tsx` — dua tampilan (1 pasien / >1 pasien), persis dua varian "Dashboard"
-  yang kamu kirim terakhir. Untuk >1 pasien: section "Daftar Pasien" di-skip (sudah ada di tab
-  Keluarga), "Jadwal Hari Ini" pakai `PatientSwitcher` (dropdown **dan** panah ‹›, sesuai
-  permintaan "both of them"). Teks insight ("Ibu Odette bangun lebih pagi...") sengaja dihapus.
-- `pages/KeluargaPage.tsx` — "Daftar Pasien" (untuk akun >1 pasien); akun 1 pasien otomatis
-  diarahkan langsung ke `DetailKeluargaPage`, skip daftar.
-- `pages/DetailKeluargaPage.tsx` — tab **Aktivitas / Inventori / Riwayat** (Statistik di-skip
-  sesuai arahan). Tab Riwayat (log chat AI) **desain baru saya buat sendiri** karena belum ada
-  referensinya — tetap pakai tema warna yang sama (card + gelembung chat navy/abu).
-- `components/HelpRequestSheet.tsx` — popup panggilan bantuan sebagai **bottom sheet** (slide
-  dari bawah), bukan alert dialog, sesuai TBC kamu. **Muncul otomatis** begitu ada panggilan baru
-  (tidak perlu diklik dulu), untuk kedua skenario 1 pasien maupun >1 pasien.
-- `components/TaskFormSheet.tsx` — gabung 2 alur Figma: Buat Aktivitas (2 langkah: form → "Cek
-  AI Voice") dan Edit Aktivitas (field "Alasan Pengubahan" HANYA muncul kalau status benar-benar
-  diubah dari nilai semula). Preview suara di langkah "Cek AI Voice" pakai `speechSynthesis`
-  browser sebagai mock (belum ada provider TTS asli tersambung).
-- `components/BelongingFormSheet.tsx`, `components/ConfirmSheet.tsx` — Tambah/Edit/Hapus Barang
-  & Aktivitas, sama persis field-nya dengan screenshot.
-- `components/Toast.tsx` — "Aktivitas Berhasil Ditambahkan" dsb.
+## 5. Frontend — React + Tailwind CSS v4
 
-**Penyesuaian skema kecil yang menyertai ini** (lihat `db/init.sql`):
-- `patient_tasks.duration_minutes` ditambahkan (field "Durasi" di form Buat Aktivitas).
-- `task_status_history.note` ditambahkan (field "Alasan Pengubahan (Opsional)") — ditaruh di
-  tabel riwayat, bukan di `patient_tasks`, karena melekat ke satu perubahan status, bukan ke
-  task-nya sendiri.
-- Endpoint baru: CRUD penuh `/api/belongings`, `PATCH`/`DELETE /api/tasks/:id`,
-  `GET /api/tasks?patientId=` (semua task, bukan cuma hari ini — dipakai "Edit Jadwal Keluarga"),
-  `GET /api/ai/history/:patientId` (tab Riwayat).
+Frontend dibangun mengikuti desain asli antarmuka mobile shell:
+- **100% Tailwind CSS v4 Utility Classes**: Semua styling menggunakan utility class dan token tema `@theme inline` di `src/index.css`.
+- **Form Aktivitas Fleksibel (`TaskFormSheet.tsx`)**: Pemilihan waktu untuk aktivitas sekali saja (*appointment*) menggunakan input date native `<input type="date" min={todayStr} />` dengan batas minimal hari ini dan tanggal-tanggal setelahnya.
+- **Verifikasi Suara AI**: Setiap pembuatan/perubahan jadwal menyertakan preview audio kartu AI voice dan ringkasan jadwal.
+- **Deteksi Jadwal Tabrakan (`TaskConflictSheet.tsx`)**: Otomatis mendeteksi waktu yang bertabrakan antar tugas aktif dan menyediakan solusi geser jam atau nonaktifkan.
+- **Tampilan Timeline**: Daftar kegiatan harian divisualisasikan dengan garis vertikal dan dot status indikator real-time.
 
-**Catatan jujur — saya tidak bisa melihat Figma secara visual**, cuma baca screenshot yang kamu
-kirim manual. Build React-nya sudah saya `tsc`-compile dan lolos, tapi saya **tidak bisa
-screenshot hasilnya sendiri** di sandbox ini (tidak ada browser headless yang bisa diinstal —
-diblokir kebijakan jaringan). Jadi tolong jalankan dan bandingkan langsung ke screenshot aslinya —
-kalau ada yang meleset (spacing, warna, ukuran), kirim screenshot hasilnya biar saya perbaiki
-lagi dengan presisi, sama seperti sesi ini.
+---
 
-Statistik (hitungan tombol 1/2/panggilan) tetap **belum ada** — perlu backend logging tambahan
-yang belum kita bangun (lihat diskusi sebelumnya soal tombol 1 tidak menulis ke manapun); ini
-konsisten dengan keputusan kamu menyembunyikan tab Statistik di Detail Keluarga untuk sekarang.
+## 6. Simulator Gelang Pendamping 3D (`frontend/public/sim/`)
 
-## 6. Simulator gelang — mic asli + ganti pasien
-
-- **Mic asli**: `js/hardware/speechInput.js` pakai `SpeechRecognition` browser (`lang: "id-ID"`).
-  Browser akan minta izin mikrofon saat pertama kali tombol Bantuan ditekan — izinkan.
-  Berjalan di `localhost` tanpa perlu HTTPS (browser menganggap localhost "secure context").
-- **Pilih pasien**: dropdown pasien di pojok kiri atas kolom 3D, di-populate dari
-  `GET /api/devices`-nya lewat `GET /api/patients`. Ganti dropdown sebelum tekan Jadwal/Bantuan
-  untuk mensimulasikan gelang pasien lain (satu gelang fisik dipakai bergantian).
-- Tombol **Jadwal** fetch jadwal asli dari `GET /api/patients/:id` (sumber sama dengan AI & dashboard).
-- Tombol **Bantuan** → dengarkan mic → kirim ke `POST /api/ai/converse` → kalau `escalate:true`,
-  backend otomatis bikin `help_requests`, langsung muncul di dashboard (polling 4 detik).
-
-## Keterbatasan yang sengaja dibiarkan (demo-grade, bukan production)
-
-- **Auth** cuma `base64(userId)` sebagai "token", backend tidak memvalidasi token di middleware
-  manapun (semua route masih terbuka). Untuk production: ganti ke JWT asli + middleware per-route.
-- **Text-to-speech** masih `speechSynthesis` browser (suara generik), belum pakai
-  `voice_profiles.provider_voice_id` ke provider TTS asli (ElevenLabs/Azure/dsb) — titik integrasi
-  jelas ada di `patient_tasks.generated_audio_url` dan respons `/api/ai/converse`, tinggal disambung.
-- Statistik, cron `MISSED` otomatis untuk task yang lewat jadwal tanpa laporan, dan halaman
-  Keluarga/akun `family` belum diimplementasikan — belum ada endpoint/komponennya.
-- Panel "Riwayat aktivitas" bawaan simulator (`wiring.js`) masih mencoba `POST /api/events` yang
-  tidak kita buat — gagal diam-diam, tidak mempengaruhi alur utama.
+- Menampilkan gelang fisik 3D menggunakan Three.js.
+- **Input Suara Nyata**: Menggunakan Web Speech API (`SpeechRecognition` bahasa Indonesia).
+- **Multi-Turn Conversation**: AI otomatis mendengarkan kembali setelah berbicara hingga pasien mengucapkan kata selesai atau hening.
+- **Dropdown Pasien Dinamis**: Gelang dapat dialihkan antar profil pasien untuk menguji skenario yang berbeda secara langsung.
