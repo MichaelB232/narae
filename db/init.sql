@@ -184,7 +184,7 @@ INSERT INTO patient_tasks (patient_id, created_by, task_name, spoken_instruction
 INSERT INTO patient_tasks (patient_id, created_by, task_name, spoken_instruction, voice_profile_id, type, days_of_week, scheduled_time, duration_minutes, status) VALUES
   (1, 1, 'Fisioterapi Ringan', 'Pak Arthur, waktunya latihan fisioterapi ringan ya.', 1, 'RECURRING', '{1,3,5}', '10:00', 30, 'SCHEDULED'),
   (3, 2, 'Senam Lansia',       'Ibu Siti, yuk ikut senam lansia di aula.', 1, 'RECURRING', '{1,3,5}', '07:30', 30, 'SCHEDULED');
-
+  
 -- Contoh riwayat interaksi AI (untuk tab "Riwayat" di Detail Keluarga)
 INSERT INTO ai_interaction_logs (patient_id, device_id, patient_speech_transcript, ai_response_text, action_triggered, latency_ms, created_at) VALUES
   (2, 2, 'Jam berapa sekarang?', 'Sekarang pukul 09 lewat 12 menit, hari Senin.', 'none', 820, now() - interval '3 hours'),

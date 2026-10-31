@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { BottomSheet } from "./BottomSheet";
 import { Avatar } from "./Avatar";
 import type { HelpRequestItem } from "../types";
@@ -19,11 +20,38 @@ export function HelpRequestSheet({
   onAcknowledge: () => void;
   onLater: () => void;
 }) {
+  const [timeLeft, setTimeLeft] = useState(10);
+
+  useEffect(() => {
+    if (!item) return;
+    setTimeLeft(10);
+    const interval = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          onLater();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [item?.id]);
+
   if (!item) return null;
+
   return (
     <BottomSheet open onClose={onLater}>
-      <h2 className="m-0 mb-0.5 text-lg font-bold text-alert">Panggilan Menunggu Respons</h2>
-      <p className="m-0 mb-4 text-[12.5px] text-mute">Respons dan tindak lanjuti panggilan pasien.</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="m-0 mb-0.5 text-lg font-bold text-alert">Panggilan Menunggu Respons</h2>
+          <p className="m-0 mb-3 text-[12.5px] text-mute">Respons dan tindak lanjuti panggilan pasien.</p>
+        </div>
+        <div className="flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800">
+          <span className="h-2 w-2 rounded-full bg-amber-500 animate-ping"></span>
+          <span>{timeLeft} detik</span>
+        </div>
+      </div>
 
       <div className="relative rounded-2xl border border-line bg-surface p-4">
         <span className="absolute top-3.5 right-3.5 rounded-full bg-alert px-2 py-0.5 text-[10px] font-bold text-white">

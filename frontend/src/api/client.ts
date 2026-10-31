@@ -27,8 +27,10 @@ export const api = {
 
   helpRequests: (nurseId: number, status?: string) =>
     request<any[]>(`/help-requests?nurseId=${nurseId}${status ? `&status=${status}` : ""}`),
+  getHelpRequest: (id: number) => request<any>(`/help-requests/${id}`),
   acknowledgeHelp: (id: number) => request(`/help-requests/${id}`, { method: "PATCH", body: JSON.stringify({ status: "ACKNOWLEDGED" }) }),
   resolveHelp: (id: number) => request(`/help-requests/${id}`, { method: "PATCH", body: JSON.stringify({ status: "RESOLVED" }) }),
+  expireHelp: (id: number) => request(`/help-requests/${id}`, { method: "PATCH", body: JSON.stringify({ status: "EXPIRED" }) }),
 
   tasksForPatient: (patientId: number) => request<any[]>(`/tasks?patientId=${patientId}`),
   confirmTask: (taskId: number, nurseId: number, approve: boolean, note?: string) =>

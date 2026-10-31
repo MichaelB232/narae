@@ -3,6 +3,7 @@ import type { RequestStatus } from "../types/domain.js";
 
 export const helpRequestService = {
   listForNurse: (nurseId: number, status?: RequestStatus) => helpRequestRepository.findByNurse(nurseId, status),
+  getById: (id: number) => helpRequestRepository.findById(id),
 
   // Dipakai 2 jalur: tombol fisik (triggeredByInteractionId = null) dan dari AI (terisi).
   create: (patientId: number, deviceId: number, triggeredByInteractionId: number | null = null) =>
@@ -10,5 +11,6 @@ export const helpRequestService = {
 
   acknowledge: (id: number) => helpRequestRepository.updateStatus(id, "ACKNOWLEDGED"),
   resolve: (id: number) => helpRequestRepository.updateStatus(id, "RESOLVED"),
+  expire: (id: number) => helpRequestRepository.updateStatus(id, "EXPIRED"),
   expireOverdue: () => helpRequestRepository.expireOverdue(),
 };

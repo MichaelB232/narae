@@ -23,6 +23,18 @@ export const helpRequestRepository = {
     return rows;
   },
 
+  async findById(id: number): Promise<HelpRequestWithPatient | null> {
+    const { rows } = await pool.query<HelpRequestWithPatient>(
+      `SELECT hr.*, p.name AS patient_name, p.room_number, ail.patient_speech_transcript
+       FROM help_requests hr
+       JOIN patients p ON p.id = hr.patient_id
+       LEFT JOIN ai_interaction_logs ail ON ail.id = hr.triggered_by_interaction_id
+       WHERE hr.id = $1`,
+      [id]
+    );
+    return rows[0] ?? null;
+  },
+
   async create(params: {
     patientId: number;
     deviceId: number;
@@ -37,7 +49,7 @@ export const helpRequestRepository = {
     return rows[0];
   },
 
-  async updateStatus(id: number, status: "ACKNOWLEDGED" | "RESOLVED"): Promise<HelpRequest | null> {
+  async updateStatus(id: number, status: "ACKNOWLEDGED" | "RESOLVED" | "EXPIRED"): Promise<HelpRequest | null> {
     const isResolved = status === "RESOLVED";
     const { rows } = await pool.query<HelpRequest>(
       `UPDATE help_requests

@@ -14,6 +14,19 @@ export async function list(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+// GET /api/help-requests/:id — cek status panggilan spesifik (dipakai simulator/gelang)
+export async function getById(req: Request, res: Response, next: NextFunction) {
+  try {
+    const id = Number(req.params.id);
+    if (!id || isNaN(id)) return res.status(400).json({ error: "ID panggilan tidak valid" });
+    const item = await helpRequestService.getById(id);
+    if (!item) return res.status(404).json({ error: "Panggilan bantuan tidak ditemukan" });
+    res.json(item);
+  } catch (err) {
+    next(err);
+  }
+}
+
 // POST /api/help-requests — dipicu TOMBOL FISIK (bukan AI). body: { patientId, deviceId }
 export async function create(req: Request, res: Response, next: NextFunction) {
   try {
@@ -25,7 +38,7 @@ export async function create(req: Request, res: Response, next: NextFunction) {
   }
 }
 
-// PATCH /api/help-requests/:id — body: { status: 'ACKNOWLEDGED' | 'RESOLVED' }
+// PATCH /api/help-requests/:id — body: { status: 'ACKNOWLEDGED' | 'RESOLVED' | 'EXPIRED' }
 export async function updateStatus(req: Request, res: Response, next: NextFunction) {
   try {
     const id = Number(req.params.id);
@@ -33,14 +46,16 @@ export async function updateStatus(req: Request, res: Response, next: NextFuncti
       return res.status(400).json({ error: "ID panggilan tidak valid" });
     }
     const { status } = req.body || {};
-    if (status !== "ACKNOWLEDGED" && status !== "RESOLVED") {
-      return res.status(400).json({ error: "status harus ACKNOWLEDGED atau RESOLVED" });
+    if (status !== "ACKNOWLEDGED" && status !== "RESOLVED" && status !== "EXPIRED") {
+      return res.status(400).json({ error: "status harus ACKNOWLEDGED, RESOLVED, atau EXPIRED" });
     }
 
     const result =
       status === "ACKNOWLEDGED"
         ? await helpRequestService.acknowledge(id)
-        : await helpRequestService.resolve(id);
+        : status === "RESOLVED"
+        ? await helpRequestService.resolve(id)
+        : await helpRequestService.expire(id);
 
     if (!result) {
       return res.status(404).json({ error: "Panggilan bantuan tidak ditemukan" });
