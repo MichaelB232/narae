@@ -8,12 +8,15 @@ import { userRepository } from "../repositories/user.repository.js";
 
 
 const dataProvider: AgentDataProvider = {
-  async getTodayTasks(patientId: number) {
-    const tasks = await patientRepository.findTodayTasks(patientId);
+  async getPatientTasks(patientId: number) {
+    const tasks = await patientRepository.findActiveTasks(patientId);
     return tasks.map((t) => ({
       task_name: t.task_name,
-      scheduled_time: t.scheduled_time,
+      scheduled_time: t.scheduled_time.slice(0, 5),
+      duration_minutes: t.duration_minutes,
       status: t.status,
+      type: t.type,
+      scheduled_date: t.scheduled_date ? t.scheduled_date.slice(0, 10) : null,
     }));
   },
   async getBelongingsSummary(patientId: number) {

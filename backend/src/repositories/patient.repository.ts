@@ -17,6 +17,7 @@ export const TODAY_TASKS_SQL = `
   ORDER BY scheduled_time;
 `;
 
+
 export const patientRepository = {
   async findByNurseId(nurseId: number): Promise<PatientWithDevice[]> {
     const { rows } = await pool.query<PatientWithDevice>(
@@ -67,6 +68,21 @@ export const patientRepository = {
       [patientId]
     );
     const { rows } = await pool.query<PatientTask>(TODAY_TASKS_SQL, [patientId]);
+    return rows;
+  },
+  async findActiveTasks(patientId: number): Promise<PatientTask[]> {
+    const { rows } = await pool.query<PatientTask>(
+      `SELECT *
+       FROM patient_tasks
+       WHERE patient_id = $1
+         AND is_active = true
+         AND (
+           type = 'RECURRING'
+           OR (type = 'ONE_TIME' AND scheduled_date >= (now() AT TIME ZONE 'Asia/Jakarta')::date)
+         )
+       ORDER BY scheduled_date ASC NULLS FIRST, scheduled_time ASC`,
+      [patientId]
+    );
     return rows;
   },
 

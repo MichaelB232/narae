@@ -72,7 +72,7 @@ routes/         pemetaan endpoint, 1 baris = 1 endpoint
 ```
 agent/src/
 ├─ tools/                 4 tool, masing-masing 1 file + 1 kalimat deskripsi
-│  ├─ getTodayTasks.tool.ts       "Mengambil daftar jadwal tugas pasien untuk hari ini..."
+│  ├─ getPatientTasks.tool.ts     "Mengambil daftar jadwal tugas pasien (hari ini dan mendatang)..."
 │  ├─ getBelongings.tool.ts       "Mencari lokasi terakhir barang milik pasien..."
 │  ├─ getCurrentDateTime.tool.ts  "Memberi tahu tanggal dan jam saat ini..."
 │  └─ requestNurseCall.tool.ts    "Menandai bahwa pasien secara eksplisit minta..."
@@ -85,7 +85,7 @@ agent/src/
 ```
 
 Ini pakai **real Gemini function-calling** — model memanggil tool kapan dia butuh data (misal
-cuma panggil `get_today_tasks` kalau pasien nanya jadwal), bukan semua data di-dump ke prompt
+cuma panggil `get_patient_tasks` kalau pasien nanya jadwal), bukan semua data di-dump ke prompt
 di awal. `agent/` sama sekali tidak tahu soal Postgres — backend (`backend/src/services/ai.service.ts`)
 yang menyuntikkan implementasi `AgentDataProvider` (lihat komentar di file itu kenapa didesain begitu).
 

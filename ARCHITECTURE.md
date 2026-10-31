@@ -17,12 +17,12 @@ Modul `agent/` dirancang sebagai paket TypeScript terisolasi (*standalone packag
 ### Alur Kerja Agent:
 1. **Gemini Function Calling (Tools Modular)**:
    - AI tidak diberikan seluruh data secara mentah (*dumping context*), melainkan memanggil tools yang sesuai saat diperlukan:
-     - `get_today_tasks`: Mengambil jadwal tugas pasien hari ini (nama tugas, jam, durasi, status).
+     - `get_patient_tasks`: Mengambil seluruh jadwal kegiatan pasien (hari ini dan mendatang) beserta nama tugas, jam, durasi, dan tanggal.
      - `get_belongings`: Mengambil lokasi terakhir barang pasien dan lokasi tempat biasanya disimpan (`default_location`).
      - `get_current_datetime`: Mengambil jam dan hari terkini dengan konversi waktu **WIB (`Asia/Jakarta`)**.
      - `request_nurse_call`: Meminta bantuan panggilan perawat jika pasien meminta tolong/terdesak secara eksplisit.
      - `report_task_complete`: Mencatat klaim pasien melalui suara bahwa suatu aktivitas telah selesai dilakukan.
-2. **System Prompt & Guardrails**:
+2. **System Prompt & Guardrails**:  
    - `agent/src/prompt/systemPrompt.ts` bertindak sebagai batasan statis (*guardrails*):
      - Prinsip *Closed-World Assumption* (tidak mengarang fakta di luar tools).
      - Larangan memberikan instruksi / diagnosa medis secara mandiri.

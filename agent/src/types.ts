@@ -1,11 +1,11 @@
-// Agent tidak pernah bicara langsung ke database — backend yang menyuntikkan
-// implementasi DataProvider ini (lihat backend/src/services/ai.service.ts).
-// Ini yang bikin folder agent/ bisa di-test atau dipakai ulang tanpa bawa Postgres.
-
 export interface TaskSummary {
   task_name: string;
   scheduled_time: string;
+  duration_minutes: number;    
   status: string;
+  type?: "RECURRING" | "ONE_TIME"; 
+  scheduled_date?: string | null; 
+  days_of_week?: number[] | null;
 }
 
 export interface BelongingSummary {
@@ -18,7 +18,6 @@ export interface BelongingsPatient {
   item_name: string;
 }
 
-
 export interface PatientIdentity {
   id: number;
   name: string;
@@ -27,7 +26,7 @@ export interface PatientIdentity {
 }
 
 export interface AgentDataProvider {
-  getTodayTasks(patientId: number): Promise<TaskSummary[]>;
+  getPatientTasks(patientId: number): Promise<TaskSummary[]>;
   getBelongingsSummary(patientId: number): Promise<BelongingSummary[]>;
   getBelongings(patientId: number): Promise<BelongingsPatient[]>;
   reportTaskComplete?(patientId: number, taskName: string): Promise<{ success: boolean; taskName: string; message: string }>;
