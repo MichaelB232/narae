@@ -45,7 +45,7 @@ export function TaskFormSheet({
   const [days, setDays] = useState<number[]>([1]);
   const [time, setTime] = useState(getWibTimeHHMM());
   const [duration, setDuration] = useState(15);
-  const [targetDay, setTargetDay] = useState<"hari_ini" | "besok">("hari_ini");
+  const [targetDate, setTargetDate] = useState<string>(getWibDateISO(0));
   const [isActive, setIsActive] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -59,6 +59,7 @@ export function TaskFormSheet({
   const timerRef = useRef<any>(null);
 
   useEffect(() => {
+    const today = getWibDateISO(0);
     if (existing) {
       setTaskName(existing.task_name);
       setRecurring(existing.type === "RECURRING");
@@ -66,10 +67,10 @@ export function TaskFormSheet({
       setTime(existing.scheduled_time?.slice(0, 5) ?? getWibTimeHHMM());
       setDuration(existing.duration_minutes ?? 15);
       setIsActive(existing.is_active ?? true);
-      if (existing.scheduled_date === getWibDateISO(1)) {
-        setTargetDay("besok");
+      if (existing.scheduled_date) {
+        setTargetDate(existing.scheduled_date.slice(0, 10));
       } else {
-        setTargetDay("hari_ini");
+        setTargetDate(today);
       }
     } else {
       setTaskName("");
@@ -77,7 +78,7 @@ export function TaskFormSheet({
       setDays([1]);
       setTime(getWibTimeHHMM());
       setDuration(15);
-      setTargetDay("hari_ini");
+      setTargetDate(today);
       setIsActive(true);
     }
     setStep("form");
@@ -108,12 +109,7 @@ export function TaskFormSheet({
   }
 
   function checkConflictAndProceed() {
-    const targetDate =
-      !recurring
-        ? targetDay === "besok"
-          ? getWibDateISO(1)
-          : getWibDateISO(0)
-        : null;
+    const scheduledDateVal = !recurring ? targetDate : null;
 
     const overlap = allTasks.find((t) => {
       if (existing && t.id === existing.id) return false;
@@ -126,9 +122,16 @@ export function TaskFormSheet({
         else dayMatches = days.some((d) => t.days_of_week?.includes(d));
       } else {
         if (t.type === "ONE_TIME") {
-          dayMatches = t.scheduled_date === targetDate;
+          dayMatches = t.scheduled_date?.slice(0, 10) === scheduledDateVal;
         } else {
-          dayMatches = true;
+          if (t.days_of_week && t.days_of_week.length > 0) {
+            const [y, m, d] = targetDate.split("-").map(Number);
+            const dt = new Date(y, m - 1, d);
+            const dayOfWeek = dt.getDay() === 0 ? 7 : dt.getDay();
+            dayMatches = t.days_of_week.includes(dayOfWeek);
+          } else {
+            dayMatches = true;
+          }
         }
       }
 
@@ -176,26 +179,23 @@ export function TaskFormSheet({
           scheduledTime: time,
           durationMinutes: duration,
           isActive,
+          type: recurring ? "RECURRING" : "ONE_TIME",
           daysOfWeek: recurring && days.length > 0 ? days : null,
+          scheduledDate: !recurring ? targetDate : null,
         });
 
         onSaved();
         handleClose();
         onShowToast("Aktivitas Berhasil Disimpan", `${taskName} pada ${time} WIB`);
       } else {
-        const scheduledDate =
-          !recurring
-            ? targetDay === "besok"
-              ? getWibDateISO(1)
-              : getWibDateISO(0)
-            : null;
+        const scheduledDate = !recurring ? targetDate : null;
 
         await api.createTask({
           patientId,
           createdBy: nurseId,
           taskName,
           spokenInstruction: `Waktunya ${taskName}.`,
-          type: recurring && days.length === 0 ? "RECURRING" : days.length > 0 ? "RECURRING" : "ONE_TIME",
+          type: recurring ? "RECURRING" : "ONE_TIME",
           daysOfWeek: recurring && days.length > 0 ? days : null,
           scheduledTime: time,
           durationMinutes: duration,
@@ -204,9 +204,10 @@ export function TaskFormSheet({
 
         onSaved();
         handleClose();
+        const dateNote = !recurring ? ` (${targetDate})` : "";
         onShowToast(
           "Aktivitas Berhasil Ditambahkan",
-          `${taskName} pada ${time} WIB ${!recurring && targetDay === "besok" ? "(Besok)" : ""}`
+          `${taskName} pada ${time} WIB${dateNote}`
         );
       }
     } catch (err: any) {
@@ -218,16 +219,20 @@ export function TaskFormSheet({
 
   if (!open) return null;
 
-  const timeInPast = !isEdit && (!recurring ? targetDay === "hari_ini" && isTimeInPastWib(time) : isTimeInPastWib(time));
+  const todayStr = getWibDateISO(0);
+  const isTargetToday = !recurring && targetDate === todayStr;
+  const timeInPast = !isEdit && isTargetToday && isTimeInPastWib(time);
 
   const dayDisplay =
     recurring && days.length > 0
       ? days.map((d) => DAYS.find((x) => x.value === d)?.label).join(", ")
       : recurring
       ? "Setiap Hari"
-      : targetDay === "besok"
-      ? "Besok (" + getWibDateISO(1) + ")"
-      : "Hari Ini (" + getWibDateISO(0) + ")";
+      : targetDate === todayStr
+      ? `Hari Ini (${todayStr})`
+      : targetDate === getWibDateISO(1)
+      ? `Besok (${getWibDateISO(1)})`
+      : `Tanggal ${targetDate}`;
 
   // ========== STEP 2: CEK AI VOICE (VERIFY) ==========
   if (step === "verify") {
@@ -430,67 +435,71 @@ export function TaskFormSheet({
           />
         </div>
 
-        {/* Mode CREATE: Berulang atau Tugas Khusus */}
-        {!isEdit && (
-          <>
-            <div className="field-row">
-              <div className="field">
-                <label>Tipe Aktivitas</label>
-                <select
-                  value={recurring ? "ya" : "tidak"}
-                  onChange={(e) => setRecurring(e.target.value === "ya")}
-                >
-                  <option value="ya">Berulang</option>
-                  <option value="tidak">Sekali Saja (Appointment)</option>
-                </select>
-              </div>
-              <div className="field">
-                <label>{recurring ? "Pilih Hari" : "Waktu Pelaksanaan"}</label>
-                {recurring ? (
-                  <div
-                    className="day-picker"
-                    style={{ display: "flex", gap: 4, flexWrap: "wrap" }}
+        {/* Tipe Aktivitas: Berulang atau Sekali Saja */}
+        <div className="field-row">
+          <div className="field">
+            <label>Tipe Aktivitas</label>
+            <select
+              value={recurring ? "ya" : "tidak"}
+              onChange={(e) => setRecurring(e.target.value === "ya")}
+            >
+              <option value="ya">Berulang</option>
+              <option value="tidak">Sekali Saja (Appointment)</option>
+            </select>
+          </div>
+          <div className="field">
+            <label>{recurring ? "Pilih Hari" : "Waktu Pelaksanaan"}</label>
+            {recurring ? (
+              <div
+                className="day-picker"
+                style={{ display: "flex", gap: 4, flexWrap: "wrap" }}
+              >
+                {DAYS.map((d) => (
+                  <button
+                    key={d.value}
+                    type="button"
+                    className="day-chip"
+                    style={{
+                      padding: "6px 8px",
+                      borderRadius: 999,
+                      fontSize: 11,
+                      border: "1px solid var(--line)",
+                      background: days.includes(d.value)
+                        ? "var(--navy)"
+                        : "var(--surface-sunken)",
+                      color: days.includes(d.value) ? "#fff" : "var(--text)",
+                    }}
+                    onClick={() =>
+                      setDays((p) =>
+                        p.includes(d.value)
+                          ? p.filter((x) => x !== d.value)
+                          : [...p, d.value]
+                      )
+                    }
                   >
-                    {DAYS.map((d) => (
-                      <button
-                        key={d.value}
-                        type="button"
-                        className="day-chip"
-                        style={{
-                          padding: "6px 8px",
-                          borderRadius: 999,
-                          fontSize: 11,
-                          border: "1px solid var(--line)",
-                          background: days.includes(d.value)
-                            ? "var(--navy)"
-                            : "var(--surface-sunken)",
-                          color: days.includes(d.value) ? "#fff" : "var(--text)",
-                        }}
-                        onClick={() =>
-                          setDays((p) =>
-                            p.includes(d.value)
-                              ? p.filter((x) => x !== d.value)
-                              : [...p, d.value]
-                          )
-                        }
-                      >
-                        {d.label}
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <select
-                    value={targetDay}
-                    onChange={(e) => setTargetDay(e.target.value as "hari_ini" | "besok")}
-                  >
-                    <option value="hari_ini">Hari Ini ({getWibDateISO(0)})</option>
-                    <option value="besok">Besok ({getWibDateISO(1)})</option>
-                  </select>
-                )}
+                    {d.label}
+                  </button>
+                ))}
               </div>
-            </div>
-          </>
-        )}
+            ) : (
+              <input
+                type="date"
+                value={targetDate}
+                min={isEdit && existing?.scheduled_date && existing.scheduled_date.slice(0, 10) < todayStr ? existing.scheduled_date.slice(0, 10) : todayStr}
+                onChange={(e) => setTargetDate(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "9px 12px",
+                  borderRadius: 8,
+                  border: "1px solid var(--line)",
+                  fontSize: 13.5,
+                  color: "var(--text)",
+                  background: "var(--surface)",
+                }}
+              />
+            )}
+          </div>
+        </div>
 
         {/* Jam Mulai & Durasi */}
         <div className="field-row">

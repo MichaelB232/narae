@@ -29,6 +29,8 @@ export interface UpdateTaskParams {
   durationMinutes?: number;
   isActive?: boolean;
   daysOfWeek?: number[] | null;
+  type?: "RECURRING" | "ONE_TIME";
+  scheduledDate?: string | null;
 }
 
 export const taskRepository = {
@@ -79,15 +81,27 @@ export const taskRepository = {
          scheduled_time = COALESCE($2, scheduled_time),
          duration_minutes = COALESCE($3, duration_minutes),
          is_active = COALESCE($4, is_active),
-         days_of_week = CASE WHEN $5::smallint[] IS NOT NULL THEN $5::smallint[] ELSE days_of_week END
-       WHERE id = $6
+         days_of_week = CASE 
+           WHEN $5::task_type = 'ONE_TIME' THEN NULL
+           WHEN $6::smallint[] IS NOT NULL THEN $6::smallint[] 
+           ELSE days_of_week 
+         END,
+         type = COALESCE($5, type),
+         scheduled_date = CASE 
+           WHEN $5::task_type = 'RECURRING' THEN NULL
+           WHEN $7::text IS NOT NULL THEN $7::date 
+           ELSE scheduled_date 
+         END
+       WHERE id = $8
        RETURNING *`,
       [
         params.taskName ?? null,
         params.scheduledTime ?? null,
         params.durationMinutes ?? null,
         params.isActive !== undefined ? params.isActive : null,
+        params.type ?? null,
         params.daysOfWeek ?? null,
+        params.scheduledDate ?? null,
         params.taskId,
       ]
     );

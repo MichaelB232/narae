@@ -70,7 +70,14 @@ export function DetailKeluargaPage() {
   );
 
   function scheduleLine(t: TaskItem) {
-    const days = t.type === "RECURRING" && t.days_of_week?.length ? t.days_of_week.map((d) => DAY_LABELS_SHORT[d]).join("/") : t.type === "RECURRING" ? "Setiap hari" : "Sekali";
+    const days =
+      t.type === "RECURRING" && t.days_of_week?.length
+        ? t.days_of_week.map((d) => DAY_LABELS_SHORT[d]).join("/")
+        : t.type === "RECURRING"
+        ? "Setiap hari"
+        : t.scheduled_date
+        ? `Tgl ${t.scheduled_date.slice(0, 10)}`
+        : "Sekali";
     return `${days}, ${hhmm(t.scheduled_time)}`;
   }
 
