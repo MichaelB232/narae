@@ -6,6 +6,7 @@ import { PhoneLayout } from "../components/PhoneLayout";
 import { Avatar } from "../components/Avatar";
 import { BackButton } from "../components/BackButton";
 import { Timeline, TaskStatusPill } from "../components/ActivityTimeline";
+import { RiwayatTab } from "../components/RiwayatTab";
 import { TaskFormSheet } from "../components/TaskFormSheet";
 import { TaskStatusSheet } from "../components/TaskStatusSheet";
 import { BelongingFormSheet } from "../components/BelongingFormSheet";
@@ -112,7 +113,7 @@ export function DetailKeluargaPage() {
   const [allTasks, setAllTasks] = useState<TaskItem[]>([]);
   const [belongings, setBelongings] = useState<Belonging[]>([]);
 
-  const [tab, setTab] = useState<"aktivitas" | "inventori">("aktivitas");
+  const [tab, setTab] = useState<"aktivitas" | "inventori" | "riwayat">("aktivitas");
   const [scheduleFilter, setScheduleFilter] = useState<"harian" | "berulang">("harian");
 
   const [taskSheet, setTaskSheet] = useState<{ open: boolean; existing?: TaskItem }>({ open: false });
@@ -227,8 +228,8 @@ export function DetailKeluargaPage() {
         </div>
 
         {/* Segmented Tabs */}
-        <div className={`p-2 flex ${cardClass}`}>
-          {(["aktivitas", "inventori"] as const).map((t) => (
+        <div className="my-3.5 flex gap-0.5 rounded-xl bg-white p-2 border border-line">
+          {(["aktivitas", "inventori", "riwayat"] as const).map((t) => (
             <button
               key={t}
               type="button"
@@ -424,6 +425,8 @@ export function DetailKeluargaPage() {
             </button>
           </div>
         )}
+
+        {tab === "riwayat" && <RiwayatTab patientId={patientId} />}
 
         {/* Bottom Sheets */}
         <TaskFormSheet
