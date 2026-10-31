@@ -5,6 +5,9 @@ import { helpRequestRepository } from "../repositories/helpRequest.repository.js
 import { taskService } from "./task.service.js";
 import { env } from "../config/env.js";
 import { userRepository } from "../repositories/user.repository.js";
+import { formatDate } from "../utils/date.js";
+
+
 
 
 const dataProvider: AgentDataProvider = {
@@ -12,13 +15,16 @@ const dataProvider: AgentDataProvider = {
     const tasks = await patientRepository.findActiveTasks(patientId);
     return tasks.map((t) => ({
       task_name: t.task_name,
-      scheduled_time: t.scheduled_time.slice(0, 5),
+      scheduled_time: t.scheduled_time
+        ? String(t.scheduled_time).slice(0, 5)
+        : "",
       duration_minutes: t.duration_minutes,
       status: t.status,
       type: t.type,
-      scheduled_date: t.scheduled_date ? t.scheduled_date.slice(0, 10) : null,
+      scheduled_date: formatDate(t.scheduled_date),
     }));
   },
+
   async getBelongingsSummary(patientId: number) {
     const belongings = await patientRepository.findBelongingsSummary(patientId);
     return belongings.map((b) => ({
