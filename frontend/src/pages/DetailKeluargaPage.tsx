@@ -11,7 +11,7 @@ import { ConfirmSheet } from "../components/ConfirmSheet";
 import { SuccessToast } from "../components/Toast";
 import { taskStatusMeta } from "../statusLabels";
 import { calcAge, hhmm, addMinutes } from "../utils";
-import type { PatientDetail, TaskItem, Belonging, AiLogItem } from "../types";
+import type { PatientDetail, TaskItem, Belonging } from "../types";
 
 const DAY_LABELS_SHORT: Record<number, string> = {
   1: "Sen", 2: "Sel", 3: "Rab", 4: "Kam", 5: "Jum", 6: "Sab", 7: "Min",
@@ -26,9 +26,8 @@ export function DetailKeluargaPage() {
   const [detail, setDetail] = useState<PatientDetail | null>(null);
   const [allTasks, setAllTasks] = useState<TaskItem[]>([]);
   const [belongings, setBelongings] = useState<Belonging[]>([]);
-  const [aiLogs, setAiLogs] = useState<AiLogItem[]>([]);
 
-  const [tab, setTab] = useState<"aktivitas" | "inventori" | "riwayat">("aktivitas");
+  const [tab, setTab] = useState<"aktivitas" | "inventori">("aktivitas");
   const [scheduleFilter, setScheduleFilter] = useState<"harian" | "berulang">("harian");
 
   const [taskSheet, setTaskSheet] = useState<{ open: boolean; existing?: TaskItem }>({ open: false });
@@ -56,16 +55,11 @@ export function DetailKeluargaPage() {
     setBelongings(await api.belongings(patientId));
   }, [patientId]);
 
-  const loadAiLogs = useCallback(async () => {
-    setAiLogs(await api.aiHistory(patientId));
-  }, [patientId]);
-
   useEffect(() => {
     loadDetail();
     loadAllTasks();
     loadBelongings();
-    loadAiLogs();
-  }, [loadDetail, loadAllTasks, loadBelongings, loadAiLogs]);
+  }, [loadDetail, loadAllTasks, loadBelongings]);
 
   if (!detail) {
     return (
@@ -156,7 +150,7 @@ export function DetailKeluargaPage() {
 
         {/* Segmented Tabs */}
         <div className="my-3.5 flex gap-0.5 rounded-xl bg-white p-2 border border-line">
-          {(["aktivitas", "inventori", "riwayat"] as const).map((t) => (
+          {(["aktivitas", "inventori"] as const).map((t) => (
             <button
               key={t}
               type="button"
@@ -406,40 +400,6 @@ export function DetailKeluargaPage() {
             >
               Tambah
             </button>
-          </div>
-        )}
-
-        {/* TAB RIWAYAT */}
-        {tab === "riwayat" && (
-          <div className="mb-3.5">
-            <div className="text-[15px] font-bold text-ink">Riwayat Interaksi AI</div>
-            <div className="mb-2.5 text-xs text-mute">Percakapan pasien dengan NARAE</div>
-
-            {aiLogs.length === 0 && (
-              <div className="py-6.5 px-3.5 text-center text-[13px] text-mute">
-                Belum ada riwayat percakapan.
-              </div>
-            )}
-            {aiLogs.map((log) => (
-              <div key={log.id} className="mb-2.5 rounded-2xl border border-line bg-surface p-4">
-                <div className="mb-2 text-[11px] text-mute">
-                  {new Date(log.created_at).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}
-                </div>
-                <div className="mb-1.5 max-w-[85%] rounded-xl bg-surface-sunken p-2.5 px-3 text-[13px] text-ink">
-                  {log.patient_speech_transcript}
-                </div>
-                <div className="ml-auto max-w-[85%] rounded-xl bg-navy-soft p-2.5 px-3 text-[13px] text-navy">
-                  {log.ai_response_text}
-                </div>
-                {log.action_triggered === "escalate_to_nurse" && (
-                  <div className="mt-2">
-                    <span className="rounded-full bg-alert-soft px-2.5 py-1 text-[11px] font-bold text-alert">
-                      Memanggil perawat
-                    </span>
-                  </div>
-                )}
-              </div>
-            ))}
           </div>
         )}
 
