@@ -1,141 +1,573 @@
-# NARAE — Smart Caregiver & Wearable Companion Rebuild (Full-Stack)
+# NARAE
 
-Aplikasi pendamping lansia dan keluarga berbasis AI Agent (Google Gemini Function Calling), backend berlapis (Node.js/Express + TypeScript + PostgreSQL), dan dashboard caregiver (React 18 + Vite + Tailwind CSS v4) dengan simulator gelang 3D interaktif bersuara asli.
+**Smart Caregiver & Wearable Companion** — asisten suara berbasis AI untuk lansia dan perawat yang mendampinginya.
+
+[![Node.js](https://img.shields.io/badge/Node.js-20-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org)
+[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org)
+[![Gemini](https://img.shields.io/badge/Google%20Gemini-Function%20Calling-8E75B2?logo=googlegemini&logoColor=white)](https://ai.google.dev)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+**Tim: Mie Ayam Kopma**
 
 ---
 
-## Struktur Folder
+## Daftar Isi
+
+1. [Tim](#1-tim)
+2. [Ringkasan Proyek](#2-ringkasan-proyek)
+3. [Fitur Utama](#3-fitur-utama)
+4. [Panduan Demo Cepat untuk Juri](#4-panduan-demo-cepat-untuk-juri)
+5. [Arsitektur Sistem](#5-arsitektur-sistem)
+6. [Tech Stack](#6-tech-stack)
+7. [Struktur Repositori](#7-struktur-repositori)
+8. [AI Agent](#8-ai-agent)
+9. [Skema Database](#9-skema-database)
+10. [Referensi API](#10-referensi-api)
+11. [Instalasi dan Menjalankan Aplikasi](#11-instalasi-dan-menjalankan-aplikasi)
+12. [Pemecahan Masalah](#12-pemecahan-masalah)
+13. [Batasan Saat Ini dan Rencana Pengembangan](#13-batasan-saat-ini-dan-rencana-pengembangan)
+14. [AI Use and Third-Party Declaration](#14-ai-use-and-third-party-declaration)
+15. [Lisensi](#15-lisensi)
+
+---
+
+## 1. Tim
+
+**Mie Ayam Kopma**
+
+| No. | Nama                        |
+| :-: | --------------------------- |
+|  1  | Radhitya Rasta Pramoja      |
+|  2  | Nicolaus Narindra           |
+|  3  | Michael Bintang Febryan S.J |
+
+---
+
+## 2. Ringkasan Proyek
+
+### Latar Belakang
+
+Lansia, khususnya yang mengalami penurunan daya ingat atau demensia, sering lupa jadwal minum obat, lupa letak barang pribadi, dan kesulitan meminta bantuan saat dibutuhkan. Di sisi lain, satu perawat umumnya mendampingi lebih dari satu pasien sehingga tidak dapat memantau setiap orang secara terus-menerus.
+
+### Solusi
+
+NARAE terdiri dari dua sisi yang saling terhubung secara real-time:
+
+| Sisi                                           | Pengguna      | Peran                                                                                                                    |
+| ---------------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| **Gelang pendamping** (disimulasikan dalam 3D) | Pasien lansia | Berbicara dengan asisten suara: menanyakan jadwal, mencari barang, melaporkan kegiatan selesai, dan memanggil perawat.   |
+| **Dashboard caregiver** (web, tampilan mobile) | Perawat       | Mengatur jadwal, memantau status kegiatan, menerima panggilan bantuan, dan meninjau riwayat percakapan pasien dengan AI. |
+
+Asisten suara digerakkan oleh **Google Gemini dengan Function Calling**. AI tidak diberi seluruh data pasien sekaligus, tetapi memanggil _tool_ tertentu hanya ketika dibutuhkan, dan dibatasi aturan ketat agar tidak memberi saran medis maupun mengarang informasi.
+
+### Catatan Penting tentang Prototipe
+
+Gelang fisik **tidak dibuat dalam bentuk perangkat keras**. Gelang disimulasikan sebagai model 3D interaktif (Three.js) yang memakai mikrofon dan speaker perangkat Anda, namun berkomunikasi dengan backend dan database yang sebenarnya.
+
+---
+
+## 3. Fitur Utama
+
+### Untuk Pasien (melalui gelang)
+
+- **Tanya jadwal.** Menyebutkan nama kegiatan, jam mulai, durasi, serta penanda waktu relatif ("hari ini", "besok", atau tanggal bila lebih dari dua hari).
+- **Kegiatan terdekat.** Menjawab pertanyaan seperti "setelah ini saya ngapain?" berdasarkan jam saat ini (WIB).
+- **Cari barang.** Menyebutkan lokasi terakhir barang beserta tempat biasa barang itu disimpan.
+- **Lapor kegiatan selesai.** Contoh: "sudah minum obat". Laporan dicatat dan menunggu konfirmasi perawat.
+- **Panggil perawat.** Hanya dipicu ketika pasien memintanya secara eksplisit.
+- **Percakapan multi-turn.** AI mendengarkan kembali setelah menjawab sampai pasien mengucapkan kata penutup atau hening.
+- **Suara bahasa Indonesia.** Pengenalan suara (`id-ID`) dan pembacaan jawaban dengan suara Indonesia terbaik yang tersedia di browser.
+
+### Untuk Perawat (dashboard)
+
+- **Beranda.** Ringkasan kegiatan hari ini.
+- **Manajemen jadwal.** Membuat, mengubah, menonaktifkan, dan menghapus kegiatan, baik berulang (pilih hari) maupun sekali jalan (pilih tanggal).
+- **Deteksi jadwal bertabrakan.** Sistem menampilkan perbandingan dua kegiatan yang bentrok dan menawarkan opsi menggeser jam atau menonaktifkan salah satunya.
+- **Konfirmasi laporan pasien.** Perawat dapat menyetujui atau menolak laporan "selesai" dari pasien.
+- **Antrean panggilan bantuan.** Panggilan baru berstatus `PENDING`, dapat ditangani (`ACKNOWLEDGED`) atau diselesaikan (`RESOLVED`). Panggilan yang tidak direspons dalam **10 detik** otomatis menjadi `EXPIRED` dan dimasukkan ke Riwayat pemanggilan.
+- **Inventori barang.** Menambah, mengubah, dan menghapus barang bawaan pasien beserta lokasi terakhir dan lokasi default.
+- **Riwayat interaksi AI.** Seluruh percakapan pasien dengan asisten tercatat dan dapat ditinjau.
+- **Dukungan 1 perawat : 1 pasien maupun 1 perawat : banyak pasien**, lengkap dengan pengalih pasien.
+- **Status otomatis `MISSED`.** Kegiatan yang melewati jam mulai ditambah durasinya otomatis ditandai terlewat.
+
+### Simulator Gelang 3D
+
+- Model 3D gelang dengan tombol **Bantuan** (merah) dan **Jadwal** (biru), LED, speaker, dan mikrofon.
+- Kontrol tampilan: depan, atas, belakang, putar otomatis, pecah komponen, dan mode presentasi.
+- Dropdown pasien untuk mengganti pemilik gelang secara langsung selama demo.
+
+---
+
+## 4. Panduan Demo Cepat untuk Juri
+
+Setelah aplikasi berjalan (lihat [Bagian 11](#11-instalasi-dan-menjalankan-aplikasi)), buka **`http://localhost:5173`** di **Google Chrome atau Microsoft Edge** pada laptop atau desktop (lebar layar minimal 1024 px), lalu izinkan akses mikrofon.
+
+**Login dengan akun demo**
+
+| Username        | Password   | Skenario                                                |
+| --------------- | ---------- | ------------------------------------------------------- |
+| `suster.satu`   | `narae123` | 1 perawat : 1 pasien (Pak Arthur)                       |
+| `suster.banyak` | `narae123` | 1 perawat : 3 pasien (Ibu Odette, Ibu Siti, Pak Herman) |
+
+**Skenario yang disarankan**
+
+| Langkah | Aksi                                                                                              | Hasil yang diharapkan                                                                                                                     |
+| :-----: | ------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+|    1    | Login sebagai `suster.banyak`. Layar terbagi: gelang 3D di kiri, dashboard di kanan.              | Dashboard menampilkan kegiatan dan antrean panggilan.                                                                                     |
+|    2    | Pada panel simulator, pilih pasien **Ibu Odette**.                                                | Gelang kini mewakili Ibu Odette.                                                                                                          |
+|    3    | Klik tombol **biru (Jadwal)** pada model 3D.                                                      | Gelang membacakan jadwal hari ini.                                                                                                        |
+|    4    | Klik tombol **merah (Bantuan)**, lalu ucapkan: _"Kacamata saya di mana?"_                         | AI memanggil tool inventori dan menyebutkan lokasi terakhir kacamata.                                                                     |
+|    5    | Klik **Bantuan** lagi, ucapkan: _"Setelah ini saya ngapain ya?"_                                  | AI menyebutkan kegiatan terdekat berikutnya beserta jam dan durasinya.                                                                    |
+|    6    | Klik **Bantuan**, ucapkan: _"Saya sudah jalan pagi."_ / Aktivitas yang belum terlewati.           | Laporan tercatat. Pada dashboard muncul status **Butuh Persetujuan**.                                                                     |
+|    7    | Di dashboard, setujui atau tolak laporan tersebut.                                                | Status berubah menjadi **Selesai** atau **Belum Selesai** dan masuk audit trail.                                                          |
+|    8    | Klik **Bantuan**, ucapkan: _"Tolong panggilkan suster."_                                          | Panggilan muncul di **Panggilan Menunggu Respons**. Tangani dalam 10 detik agar gelang menerima kabar "perawat sudah menerima panggilan". |
+|    9    | Ucapkan pertanyaan di luar topik atau medis, misalnya _"Boleh minum obat dua kali?"_              | AI menolak dengan sopan dan mengarahkan ke perawat (guardrail).                                                                           |
+|   10    | Buka **Keluarga**, pilih pasien, lalu telusuri tab **Aktivitas**, **Inventori**, dan **Riwayat**. | Seluruh interaksi dan perubahan status tercatat.                                                                                          |
+
+> Data jadwal demo dibuat **relatif terhadap waktu database pertama kali diinisialisasi** (lihat [Bagian 12](#12-pemecahan-masalah) untuk cara menyegarkannya).
+
+---
+
+## 5. Arsitektur Sistem
+
+![Diagram arsitektur sistem NARAE: simulator gelang 3D dan dashboard caregiver memanggil backend Express berlapis yang terhubung ke PostgreSQL dan modul AI agent berbasis Google Gemini](docs/images/architecture.svg)
+
+**Prinsip desain**
+
+- **Arsitektur berlapis di backend.** Setiap lapisan punya satu tanggung jawab: _routes_ memetakan endpoint, _controllers_ memvalidasi input, _services_ memuat logika bisnis, _repositories_ menjalankan SQL berparameter.
+- **Modul AI terisolasi (`agent/`).** Paket ini tidak mengenal PostgreSQL. Ia hanya bergantung pada kontrak `AgentDataProvider`, sehingga mudah diuji dan diganti sumber datanya.
+- **Waktu selalu berbasis WIB (`Asia/Jakarta`).** Termasuk perhitungan status `MISSED` dan jam yang diucapkan AI.
+- **Tanggal `DATE` dibaca sebagai string `YYYY-MM-DD`.** Parser kustom pada `db/pool.ts` mencegah pergeseran zona waktu objek `Date` JavaScript.
+  Penjelasan teknis yang lebih mendalam tersedia di [`ARCHITECTURE.md`](ARCHITECTURE.md).
+
+---
+
+## 6. Tech Stack
+
+| Lapisan           | Teknologi                                                                                  |
+| ----------------- | ------------------------------------------------------------------------------------------ |
+| **Frontend**      | React 18, React Router 6, Vite 5, TypeScript 5, Tailwind CSS v4                            |
+| **Simulator 3D**  | Three.js r128, OrbitControls, JavaScript murni, Web Speech API (STT dan TTS)               |
+| **Backend**       | Node.js 20, Express 4, TypeScript 5, `pg`, `bcryptjs`, `cors`, `dotenv`                    |
+| **AI Agent**      | Google Gemini melalui `@google/genai` (Function Calling), model default `gemini-2.0-flash` |
+| **Database**      | PostgreSQL 16                                                                              |
+| **Infrastruktur** | Docker dan Docker Compose                                                                  |
+
+---
+
+## 7. Struktur Repositori
 
 ```
 narae/
-├─ docker-compose.yml       db (Postgres 16) + backend + frontend
-├─ .env.example             template konfigurasi environment
+├─ docker-compose.yml          Orkestrasi db + backend + frontend
+├─ .env.example                Template konfigurasi environment
+├─ ARCHITECTURE.md             Dokumen arsitektur teknis
+├─ LICENSE                     MIT License
+│
 ├─ db/
-│  ├─ init.sql              schema final + seed skenario akun & jadwal multi-hari
-│  └─ seed_additional.sql   skrip seed tambahan untuk inventori & tugas masa depan
-├─ backend/                 TypeScript berlapis: routes → controllers → services → repositories → db
-│  ├─ src/utils/date.ts     utilitas format tanggal ISO YYYY-MM-DD yang aman
-│  └─ src/config/env.ts     konfigurasi environment otomatis
-├─ agent/                   paket AI terpisah (@narae/agent): tools modular + prompt + Gemini client
-│  ├─ src/tools/            getPatientTasks, getBelongings, getBelongingsSummary, getCurrentDateTime, requestNurseCall, reportTaskComplete
-│  └─ src/prompt/           systemPrompt.ts (guardrails & aturan respons) + jitContext.ts
-└─ frontend/                React + Vite + TypeScript (Full Tailwind CSS v4)
-   ├─ src/components/       BottomSheet, TaskFormSheet, TaskConflictSheet, TaskStatusSheet, dll
-   ├─ src/pages/            BerandaPage, DetailKeluargaPage, KeluargaPage, LoginPage, PengaturanPage
-   └─ public/sim/           Simulator gelang 3D (Three.js) — input mic asli (Web Speech API)
+│  ├─ init.sql                 Skema final + data demo (dijalankan otomatis saat pertama kali)
+│  └─ seed_additional.sql      Seed tambahan opsional (inventori & kegiatan; aman dijalankan berulang)
+│
+├─ agent/                      Paket AI terpisah (@narae/agent)
+│  └─ src/
+│     ├─ agent.ts              Loop Function Calling (maksimal 4 ronde tool)
+│     ├─ geminiClient.ts       Pembuat klien Gemini
+│     ├─ prompt/               systemPrompt.ts (guardrail) dan jitContext.ts (konteks pasien)
+│     └─ tools/                Satu berkas per tool + index.ts sebagai registri
+│
+├─ backend/
+│  ├─ Dockerfile
+│  └─ src/
+│     ├─ config/               Pembacaan environment
+│     ├─ routes/               Pemetaan endpoint REST
+│     ├─ controllers/          Validasi request dan respons HTTP
+│     ├─ services/             Logika bisnis (termasuk ai.service.ts)
+│     ├─ repositories/         Query SQL berparameter
+│     ├─ db/pool.ts            Koneksi PostgreSQL
+│     ├─ types/ dan utils/     Tipe domain dan utilitas tanggal
+│     └─ index.ts              Entry point Express
+│
+└─ frontend/
+   ├─ Dockerfile
+   ├─ src/
+   │  ├─ pages/                Beranda, Keluarga, DetailKeluarga, Login, Pengaturan
+   │  ├─ components/           Sheet form, timeline, layout, switcher pasien, dll.
+   │  ├─ api/client.ts         Klien HTTP ke backend
+   │  └─ tts.ts                Pemilih suara Indonesia untuk Text-to-Speech
+   ├─ public/sim/              Simulator gelang 3D (Three.js, aset statis)
+   └─ scripts/verify_click.py  Skrip uji klik tombol 3D (Playwright, opsional)
 ```
 
 ---
 
-## 1. Cara Menjalankan
+## 8. AI Agent
 
-### Opsi A: Menggunakan Docker Compose (Instan)
+### Alur Percakapan
+ 
+![Diagram alur percakapan AI Agent NARAE dari ucapan pasien, pemanggilan tool Gemini, pencatatan log, eskalasi ke perawat, hingga jawaban dibacakan](docs/images/ai-agent-flow.svg)
+ 
+Angka pada diagram menunjukkan urutan proses. Garis putus-putus hijau menandakan percakapan multi-turn: setelah gelang menjawab, AI mendengarkan lagi sampai pasien mengucapkan kata penutup (misalnya "terima kasih" atau "cukup") atau hening.
+
+### Daftar Tool
+
+| Tool                     | Dipanggil ketika                                         | Hasil                                                                      |
+| ------------------------ | -------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `get_patient_tasks`      | Pasien bertanya jadwal atau kegiatan                     | Nama kegiatan, jam, durasi, tipe, tanggal, status                          |
+| `get_current_datetime`   | Perlu mengetahui jam, hari, atau tanggal sekarang        | Waktu saat ini dalam WIB                                                   |
+| `get_belongings_summary` | "Barang saya di mana?"                                   | Lokasi terakhir dan lokasi default tiap barang                             |
+| `get_belongings`         | "Saya punya barang apa saja?"                            | Daftar nama barang                                                         |
+| `report_task_complete`   | Pasien menyebut kegiatan tertentu sudah selesai          | Status laporan: dicatat, sudah dilaporkan, atau sudah dikonfirmasi perawat |
+| `request_nurse_call`     | Pasien secara **eksplisit** meminta dipanggilkan perawat | Menandai eskalasi dan membuat tiket bantuan                                |
+
+Menambah tool baru cukup dengan membuat satu berkas di `agent/src/tools/` lalu mendaftarkannya di `index.ts`.
+
+### Guardrail (`systemPrompt.ts`)
+
+| Aturan                     | Penjelasan                                                                                                                                |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| **Closed-world**           | Jawaban hanya boleh berasal dari hasil tool atau catatan perawatan. AI tidak boleh mengarang jadwal, nama, atau lokasi.                   |
+| **Tanpa saran medis**      | Tidak memberi dosis, diagnosis, atau izin minum obat. Pasien diarahkan bertanya kepada perawat.                                           |
+| **Di luar topik**          | Pertanyaan seperti cuaca, berita, atau politik dijawab singkat sebagai di luar kemampuan asisten.                                         |
+| **Ringkas dan sederhana**  | Maksimal 1 sampai 2 kalimat dalam bahasa Indonesia yang mudah dipahami, mengingat keterbatasan daya ingat pasien.                         |
+| **Eskalasi terkendali**    | Perawat dipanggil hanya jika diminta eksplisit, bukan karena AI tidak tahu jawabannya. AI juga tidak menjanjikan perawat "segera datang". |
+| **Laporan harus spesifik** | Jika pasien hanya berkata "tugas saya sudah selesai" tanpa menyebut nama kegiatan, AI bertanya balik dan tidak menebak.                   |
+| **Output siap TTS**        | Selalu teks polos tanpa markdown atau JSON agar nyaman dibacakan.                                                                         |
+
+### Konteks Just-In-Time
+
+Pada setiap sesi, `jitContext.ts` menyuntikkan identitas pasien, nama perawat pendamping, dan catatan klinis sebagai konteks tambahan. Catatan klinis **tidak boleh dibacakan apa adanya** kepada pasien.
+
+---
+
+## 9. Skema Database
+
+| Tabel                 | Fungsi                                                                                       |
+| --------------------- | -------------------------------------------------------------------------------------------- |
+| `users`               | Akun perawat atau keluarga (kata sandi di-hash dengan bcrypt)                                |
+| `patients`            | Profil pasien, kamar, perawat penanggung jawab, dan catatan klinis                           |
+| `devices`             | Metadata gelang: UID, baterai, status online, sinkronisasi terakhir                          |
+| `patient_tasks`       | Definisi kegiatan: nama, jam, durasi, tipe (`RECURRING` / `ONE_TIME`), hari, tanggal, status |
+| `task_status_history` | Audit trail perubahan status beserta pengubah dan catatan alasan                             |
+| `patient_belongings`  | Barang bawaan beserta `last_location` dan `default_location`                                 |
+| `ai_interaction_logs` | Log ucapan pasien, jawaban AI, aksi yang dipicu, dan latensi                                 |
+| `help_requests`       | Antrean panggilan bantuan ke perawat                                                         |
+| `voice_profiles`      | Profil suara untuk instruksi pengingat                                                       |
+
+**Siklus status kegiatan**
+
+```
+SCHEDULED ─► REMINDER_PLAYED ─► REPORTED_COMPLETE_BY_PATIENT ─┬─► CONFIRMED_BY_NURSE
+    │                                                           └─► REJECTED_BY_NURSE
+    └──────────────► MISSED  (otomatis jika melewati jam mulai + durasi)
+```
+
+| Status di database             | Label di dashboard |
+| ------------------------------ | ------------------ |
+| `SCHEDULED`                    | Nanti              |
+| `REMINDER_PLAYED`              | Proses             |
+| `REPORTED_COMPLETE_BY_PATIENT` | Butuh Persetujuan  |
+| `CONFIRMED_BY_NURSE`           | Selesai            |
+| `REJECTED_BY_NURSE`            | Belum Selesai      |
+| `MISSED`                       | Terlewat           |
+
+**Siklus panggilan bantuan:** `PENDING` ─► `ACKNOWLEDGED` ─► `RESOLVED`, atau `PENDING` ─► `EXPIRED` bila tidak direspons dalam 10 detik.
+
+---
+
+## 10. Referensi API
+
+Base URL lokal: `http://localhost:4000/api`
+
+| Metode   | Endpoint                          | Fungsi                                                                   |
+| -------- | --------------------------------- | ------------------------------------------------------------------------ |
+| `GET`    | `/health`                         | Pemeriksaan status server                                                |
+| `POST`   | `/auth/login`                     | Login perawat; mengembalikan data user dan token                         |
+| `GET`    | `/patients?nurseId=`              | Daftar pasien di bawah perawat                                           |
+| `GET`    | `/patients/:id`                   | Detail pasien: profil, kegiatan hari ini, inventori, catatan klinis      |
+| `GET`    | `/tasks?patientId=`               | Seluruh kegiatan pasien                                                  |
+| `POST`   | `/tasks`                          | Membuat kegiatan (berulang atau sekali jalan)                            |
+| `PATCH`  | `/tasks/:id`                      | Mengubah kegiatan (nama, jam, durasi, tipe, tanggal, `is_active`)        |
+| `DELETE` | `/tasks/:id`                      | Menghapus kegiatan                                                       |
+| `POST`   | `/tasks/:id/played`               | Menandai pengingat sudah diputar                                         |
+| `POST`   | `/tasks/:id/report`               | Pasien melaporkan kegiatan selesai                                       |
+| `PATCH`  | `/tasks/:id/confirm`              | Perawat menyetujui atau menolak laporan, dengan catatan                  |
+| `GET`    | `/tasks/:id/history`              | Riwayat perubahan status kegiatan                                        |
+| `GET`    | `/help-requests?nurseId=&status=` | Daftar panggilan bantuan                                                 |
+| `GET`    | `/help-requests/:id`              | Detail satu panggilan                                                    |
+| `POST`   | `/help-requests`                  | Membuat panggilan bantuan                                                |
+| `PATCH`  | `/help-requests/:id`              | Mengubah status (`ACKNOWLEDGED` / `RESOLVED`)                            |
+| `GET`    | `/belongings?patientId=`          | Daftar barang bawaan                                                     |
+| `POST`   | `/belongings`                     | Menambah barang                                                          |
+| `PATCH`  | `/belongings/:id`                 | Mengubah barang                                                          |
+| `DELETE` | `/belongings/:id`                 | Menghapus barang                                                         |
+| `GET`    | `/devices`                        | Daftar gelang (dipakai simulator)                                        |
+| `POST`   | `/devices/:uid/heartbeat`         | Sinkronisasi berkala dan baterai gelang                                  |
+| `POST`   | `/ai/converse`                    | Percakapan pasien dengan AI. Body: `{ patientId, deviceId, transcript }` |
+| `GET`    | `/ai/history/:patientId`          | Riwayat interaksi AI pasien                                              |
+
+**Contoh: percakapan dengan AI**
+
+```bash
+curl -X POST http://localhost:4000/api/ai/converse \
+  -H "Content-Type: application/json" \
+  -d '{"patientId": 2, "deviceId": 2, "transcript": "Kacamata saya di mana?"}'
+```
+
+Respons berisi `responseText`, `escalate`, `latencyMs`, `toolCallsUsed`, `interactionId`, dan `helpRequest` (bila ada eskalasi).
+
+---
+
+## 11. Instalasi dan Menjalankan Aplikasi
+
+### Prasyarat
+
+| Kebutuhan                     | Keterangan                                                            |
+| ----------------------------- | --------------------------------------------------------------------- |
+| **Docker dan Docker Compose** | Untuk Opsi A (disarankan)                                             |
+| **Node.js 20+ dan npm**       | Hanya untuk Opsi B (manual)                                           |
+| **Gemini API Key**            | Gratis melalui [Google AI Studio](https://aistudio.google.com/apikey) |
+| **Chrome atau Edge**          | Diperlukan untuk Web Speech API                                       |
+
+### Konfigurasi Environment
+
 ```bash
 cp .env.example .env
-# Isi GEMINI_API_KEY di file .env (ambil dari https://aistudio.google.com/apikey)
+```
+
+| Variabel         | Wajib | Default                                                    | Keterangan                                                        |
+| ---------------- | :---: | ---------------------------------------------------------- | ----------------------------------------------------------------- |
+| `GEMINI_API_KEY` |  Ya   | -                                                          | Kunci API Gemini. Tanpa ini, endpoint AI akan menolak permintaan. |
+| `GEMINI_MODEL`   | Tidak | `gemini-3.5-flash-lite`                                    | Model Gemini yang dipakai                                         |
+| `VITE_API_URL`   | Tidak | `http://localhost:4000/api`                                | URL API yang dipakai browser (dashboard dan simulator)            |
+| `DATABASE_URL`   | Tidak | `postgres://narae:narae_dev_password@localhost:5432/narae` | Sudah diatur otomatis oleh Docker Compose                         |
+| `PORT`           | Tidak | `4000`                                                     | Port backend                                                      |
+| `CORS_ORIGIN`    | Tidak | `*`                                                        | Origin yang diizinkan                                             |
+
+> File `.env` sudah masuk `.gitignore`. **Jangan pernah meng-commit API key.**
+
+### Opsi A: Docker Compose (Disarankan)
+
+```bash
+cp .env.example .env
+# Edit .env, isi GEMINI_API_KEY
 
 docker compose up --build
 ```
-- **Backend API**: `http://localhost:4000` (uji status via `curl http://localhost:4000/api/health`)
-- **Frontend Dashboard & Simulator**: `http://localhost:5173` (buka di Google Chrome atau Microsoft Edge untuk dukungan Web Speech API)
 
-### Opsi B: Menjalankan Manual di Terminal Terpisah (Hot Reload Aktif)
-Cocok untuk pengembangan cepat frontend dan backend secara independen:
+| Layanan                 | Alamat                                                                     |
+| ----------------------- | -------------------------------------------------------------------------- |
+| Dashboard dan Simulator | http://localhost:5173                                                      |
+| Backend API             | http://localhost:4000 (uji dengan `curl http://localhost:4000/api/health`) |
+| PostgreSQL              | `localhost:5432`                                                           |
 
-1. **Jalankan Database PostgreSQL**:
-   ```bash
-   docker compose up db -d
-   ```
-2. **Terminal 1 — Backend (Port 4000)**:
-   ```bash
-   cd backend
-   npm run build
-   npm run dev
-   ```
-3. **Terminal 2 — Frontend (Port 5173)**:
-   ```bash
-   cd frontend
-   npm run dev
-   ```
-   *Setiap perubahan kode di `frontend/src/` akan langsung diperbarui di browser seketika (Hot Module Replacement).*
+Database akan dibuat dan diisi data demo secara otomatis dari `db/init.sql` pada saat pertama kali dijalankan.
 
----
+### Opsi B: Manual (untuk Pengembangan)
 
-## 2. Akun Demo untuk Pengujian (`localhost:5173`)
+**1. Jalankan database**
 
-| Username | Password | Skenario Pengujian |
-|---|---|---|
-| `suster.satu` | `narae123` | **1 Perawat : 1 Pasien** (Pak Arthur) — dashboard langsung fokus ke satu pasien |
-| `suster.banyak` | `narae123` | **1 Perawat : 3 Pasien** (Ibu Odette, Ibu Siti, Pak Herman) — dashboard switcher pasien & antrean panggilan |
-
----
-
-## 3. Backend — Lapisan & Endpoint Utama
-
-Arsitektur backend memisahkan tanggung jawab secara ketat:
-```
-routes/ ──> controllers/ ──> services/ ──> repositories/ ──> PostgreSQL
-                                  │
-                                  └──> @narae/agent (Gemini Function Calling)
+```bash
+docker compose up db -d
 ```
 
-- **`repositories/`**: Query SQL mentah dengan parameter `$1, $2` yang aman, evaluasi waktu berbasis zona WIB (`Asia/Jakarta`), dan update otomatis status `MISSED`.
-- **`services/`**: Logika bisnis, penanganan siklus tugas harian, dan penyuntikan interface `AgentDataProvider` ke modul AI Agent.
-- **`controllers/`**: Validasi payload request dan response status HTTP.
-- **`routes/`**: Pemetaan rute RESTful.
+**2. Build paket agent** (wajib, karena backend bergantung padanya)
 
-| Method & Endpoint | Fungsi |
-|---|---|
-| `POST /api/auth/login` | Autentikasi perawat, mengembalikan data user & token sesi |
-| `GET /api/patients?nurseId=` | Mengambil daftar pasien di bawah pendampingan perawat |
-| `GET /api/patients/:id` | Detail profil pasien, aktivitas hari ini, inventori, dan catatan klinis |
-| `POST /api/tasks` | Membuat jadwal baru (mendukung jadwal berulang atau sekali jalan dengan tanggal fleksibel) |
-| `PATCH /api/tasks/:id` | Mengubah jadwal (nama, jam, durasi, status aktif `is_active`, tipe, tanggal `scheduled_date`) |
-| `PATCH /api/tasks/:id/confirm` | Konfirmasi perawat (Selesai / Tolak) beserta catatan alasan |
-| `POST /api/tasks/:id/report` | Pasien melapor aktivitas selesai via suara (klaim menunggu konfirmasi perawat) |
-| `GET /api/help-requests?nurseId=&status=` | Mengambil daftar panggilan bantuan pasien yang menunggu respons |
-| `PATCH /api/help-requests/:id` | Mengubah status tiket panggilan (`ACKNOWLEDGED` / `RESOLVED`) |
-| `GET /api/belongings?patientId=` | Mengambil daftar barang bawaan pasien |
-| `POST /api/belongings` | Menambahkan barang bawaan baru beserta lokasi terakhir dan default |
-| `POST /api/ai/converse` | Gerbang percakapan audio/teks dari gelang ke model Gemini AI |
+```bash
+cd agent
+npm install
+npm run build
+```
 
----
+**3. Jalankan backend** (port 4000)
 
-## 4. Modul AI Agent (`agent/`)
+```bash
+cd backend
+npm install
+npm run build
+npm run dev          # node --watch dist/index.js
+# Opsional, di terminal lain agar TypeScript dikompilasi ulang otomatis:
+npm run watch
+```
 
-Modul asisten AI bekerja secara terisolasi dan mandiri (*closed-world*), tidak bergantung langsung pada driver PostgreSQL, melainkan melalui kontrak `AgentDataProvider`.
+**4. Jalankan frontend** (port 5173, Hot Module Replacement aktif)
 
-### Fitur Function Calling Gemini:
-1. **`get_patient_tasks`**: Mengambil seluruh daftar kegiatan aktif pasien (hari ini dan hari-hari mendatang) beserta jam mulai, durasi menit, dan tanggalnya.
-2. **`get_belongings_summary`**: Mencari letak terakhir barang pasien beserta tempat biasanya ditaruh saat pasien bertanya *"di mana barang saya?"*.
-3. **`get_belongings`**: Menyebutkan daftar barang-barang yang dimiliki pasien di database saat bertanya *"barang saya apa saja?"*.
-4. **`get_current_datetime`**: Mengetahui jam, hari, dan tanggal saat ini berbasis WIB (`Asia/Jakarta`).
-5. **`report_task_complete`**: Mencatat klaim suara pasien bahwa suatu aktivitas telah dilakukan (*"sudah minum obat"*, dsb).
-6. **`request_nurse_call`**: Meminta bantuan panggilan darurat perawat hanya jika pasien secara eksplisit meminta tolong.
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-### Aturan Guardrails AI (`systemPrompt.ts`):
-- **Pertanyaan Spesifik Jadwal**: AI menyebutkan nama tugas, jam mulai, durasi aktivitas, dan penanda waktu relatif (*"hari ini"*, *"besok"*, atau format tanggal jika > 2 hari).
-- **Pertanyaan Tugas Terdekat / Setelah Ini**: AI mencocokkan waktu sekarang dengan jadwal berikutnya yang belum selesai dan memberitahu pasien kegiatan apa yang paling dekat.
-- **Pertanyaan Kemampuan AI**: Saat pasien bertanya *"kamu bisa apa?"* atau *"apa fungsi kamu?"*, AI langsung menjawab ramah dan ringkas dalam 1–2 kalimat tanpa memanggil tool.
-- **Larangan Medis**: Tidak memberikan dosis obat, diagnosis, atau anjuran medis independen (selalu diarahkan ke perawat).
-- **Format Output**: Selalu teks santai polos yang nyaman dibacakan oleh Text-to-Speech (TTS), tanpa format markdown/JSON.
+Backend membaca `.env` dari folder `backend/` maupun folder induknya (root proyek).
 
----
+### Seed Tambahan (Opsional)
 
-## 5. Frontend — React + Tailwind CSS v4
+```bash
+docker exec -i narae-db psql -U narae -d narae < db/seed_additional.sql
+```
 
-Frontend dibangun mengikuti desain asli antarmuka mobile shell:
-- **100% Tailwind CSS v4 Utility Classes**: Semua styling menggunakan utility class dan token tema `@theme inline` di `src/index.css`.
-- **Form Aktivitas Fleksibel (`TaskFormSheet.tsx`)**: Pemilihan waktu untuk aktivitas sekali saja (*appointment*) menggunakan input date native `<input type="date" min={todayStr} />` dengan batas minimal hari ini dan tanggal-tanggal setelahnya.
-- **Verifikasi Suara AI**: Setiap pembuatan/perubahan jadwal menyertakan preview audio kartu AI voice dan ringkasan jadwal.
-- **Deteksi Jadwal Tabrakan (`TaskConflictSheet.tsx`)**: Otomatis mendeteksi waktu yang bertabrakan antar tugas aktif dan menyediakan solusi geser jam atau nonaktifkan.
-- **Tampilan Timeline**: Daftar kegiatan harian divisualisasikan dengan garis vertikal dan dot status indikator real-time.
+Skrip ini menambahkan inventori dan kegiatan tambahan, dan aman dijalankan berulang.
+
+### Uji Klik Tombol 3D (Opsional)
+
+```bash
+pip install playwright && playwright install chromium
+python3 frontend/scripts/verify_click.py
+```
 
 ---
 
-## 6. Simulator Gelang Pendamping 3D (`frontend/public/sim/`)
+## 12. Pemecahan Masalah
 
-- Menampilkan gelang fisik 3D menggunakan Three.js.
-- **Input Suara Nyata**: Menggunakan Web Speech API (`SpeechRecognition` bahasa Indonesia).
-- **Multi-Turn Conversation**: AI otomatis mendengarkan kembali setelah berbicara hingga pasien mengucapkan kata selesai atau hening.
-- **Dropdown Pasien Dinamis**: Gelang dapat dialihkan antar profil pasien untuk menguji skenario yang berbeda secara langsung.
+| Gejala                                                             | Penyebab dan Solusi                                                                                                                                                                           |
+| ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Mikrofon tidak berfungsi atau muncul peringatan izin               | Gunakan **Chrome atau Edge**, klik **Izinkan** saat diminta, dan pastikan halaman dibuka lewat `localhost` atau HTTPS. Browser lain seperti Firefox belum mendukung `SpeechRecognition`.      |
+| AI menjawab "GEMINI_API_KEY belum diisi"                           | Isi `GEMINI_API_KEY` pada `.env`, lalu jalankan ulang: `docker compose up --build`.                                                                                                           |
+| Simulator 3D tidak tampil, hanya dashboard                         | Lebar layar kurang dari 1024 px. Gunakan laptop atau desktop.                                                                                                                                 |
+| Tidak ada suara dari gelang                                        | Nyalakan suara perangkat dan klik halaman sekali sebelum berbicara agar browser mengizinkan audio.                                                                                            |
+| Jadwal demo terlihat "kemarin" atau tidak relevan                  | Jadwal demo dibuat relatif terhadap waktu inisialisasi database. Segarkan dengan `docker compose down -v` lalu `docker compose up --build`. **Perintah ini menghapus seluruh data database.** |
+| Port `5432`, `4000`, atau `5173` sudah dipakai                     | Hentikan proses yang memakai port tersebut, atau ubah pemetaan port pada `docker-compose.yml`.                                                                                                |
+| Backend gagal start dengan `ERR_MODULE_NOT_FOUND` pada mode manual | Paket `agent` belum dibuild. Jalankan `npm install && npm run build` di folder `agent/`.                                                                                                      |
+
+---
+
+## 13. Batasan Saat Ini dan Rencana Pengembangan
+
+Kami mencantumkan batasan secara terbuka agar penilaian terhadap prototipe ini akurat.
+
+### Batasan Saat Ini
+
+| Area                   | Kondisi                                                                                                                                                  |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Perangkat keras**    | Gelang hanya berupa simulasi 3D di browser. Belum ada firmware atau perangkat fisik.                                                                     |
+| **Autentikasi**        | Token sesi masih sederhana (representasi ID pengguna) dan **belum diverifikasi oleh middleware** di sisi server. Cocok untuk demo, belum untuk produksi. |
+| **CORS**               | Diatur `*` untuk kemudahan pengembangan.                                                                                                                 |
+| **Kredensial**         | Kata sandi database dan akun demo adalah nilai pengembangan. Wajib diganti sebelum deployment nyata.                                                     |
+| **Peran keluarga**     | Skema database mendukung peran `family`, tetapi antarmukanya baru melayani perawat.                                                                      |
+| **Pengingat otomatis** | Status `REMINDER_PLAYED` dan endpoint `/tasks/:id/played` tersedia, tetapi penjadwal pengingat otomatis di gelang belum diimplementasikan.               |
+| **Profil suara**       | Tabel `voice_profiles` dan kloning suara masih berupa data awal, belum terhubung ke layanan TTS khusus.                                                  |
+| **Pengujian**          | Belum ada rangkaian uji otomatis (unit/integrasi). Verifikasi saat ini bersifat manual dan melalui `verify_click.py`.                                    |
+| **Browser**            | Fitur suara membutuhkan Chrome atau Edge.                                                                                                                |
+| **Data klinis**        | Seluruh data pasien dalam repositori ini adalah **data fiktif** untuk demo.                                                                              |
+
+### Rencana Pengembangan
+
+1. Autentikasi JWT dengan middleware otorisasi per perawat.
+2. Antarmuka untuk keluarga pasien.
+3. Penjadwal pengingat otomatis dan notifikasi _push_ ke perawat.
+4. Integrasi perangkat keras gelang nyata (mikrofon, speaker, tombol fisik).
+5. Suara pengingat dengan profil suara perawat atau keluarga.
+6. Suite pengujian otomatis dan pipeline CI.
+
+---
+
+## 14. AI Use and Third-Party Declaration
+
+Bagian ini menjelaskan secara transparan bagaimana AI dan komponen pihak ketiga digunakan dalam proyek NARAE.
+
+### 14.1 Penggunaan AI di Dalam Produk
+
+| Aspek                               | Keterangan                                                                                                                                       |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Penyedia dan model**              | Google Gemini melalui SDK `@google/genai`. Model default `gemini-2.0-flash`, dapat diganti lewat variabel `GEMINI_MODEL`.                        |
+| **Teknik**                          | Function Calling (tool use) dengan batas maksimal 4 ronde pemanggilan tool per percakapan.                                                       |
+| **Fungsi**                          | Memahami ucapan pasien dan merangkai jawaban singkat berdasarkan data dari tool.                                                                 |
+| **Pelatihan atau fine-tuning**      | **Tidak ada.** Tim tidak melatih atau melakukan fine-tuning model apa pun. Perilaku diatur sepenuhnya melalui _system prompt_ dan definisi tool. |
+| **Data yang dikirim ke layanan AI** | Transkrip ucapan pasien, nama pasien, nama perawat, catatan klinis, serta hasil tool (jadwal, daftar barang, waktu saat ini).                    |
+| **Pengamanan perilaku**             | Closed-world, larangan saran medis, pembatasan topik, dan eskalasi hanya atas permintaan eksplisit (lihat [Bagian 8](#8-ai-agent)).              |
+| **Pencatatan**                      | Setiap percakapan disimpan di tabel `ai_interaction_logs` dan dapat ditinjau perawat.                                                            |
+| **Peran manusia**                   | AI tidak mengambil keputusan klinis. Laporan kegiatan dari pasien selalu menunggu konfirmasi perawat.                                            |
+
+**Keterbatasan AI yang perlu diketahui.** Model bahasa dapat keliru atau salah memahami ucapan, terutama jika hasil pengenalan suara kurang akurat. Karena itu, NARAE diposisikan sebagai alat bantu pendamping dan **bukan pengganti perawat atau tenaga medis**.
+
+### 14.2 Layanan Suara pada Browser
+
+| Fitur          | API                                           | Catatan                                                                                                                 |
+| -------------- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Speech-to-Text | Web Speech API (`SpeechRecognition`, `id-ID`) | Disediakan browser. Pada Chrome dan Edge, pemrosesan audio umumnya dilakukan oleh layanan cloud milik penyedia browser. |
+| Text-to-Speech | Web Speech API (`speechSynthesis`)            | Memilih suara bahasa Indonesia terbaik yang tersedia pada perangkat.                                                    |
+
+Keduanya bukan model AI buatan tim dan tidak memerlukan kunci API.
+
+### 14.3 Penggunaan AI dalam Proses Pengembangan
+
+- Tim memanfaatkan **asisten AI untuk pengembangan** sebagai alat bantu dalam menulis, menyempurnakan, dan men-debug kode.
+- **Dokumentasi ini (README)** disusun dengan bantuan **Claude (Anthropic)** berdasarkan hasil analisis isi repositori, kemudian ditinjau oleh tim.
+- Seluruh keluaran AI **ditinjau, diuji, dan disetujui oleh anggota tim** sebelum digabungkan ke repositori. Tim bertanggung jawab penuh atas kebenaran, keamanan, dan kualitas hasil akhir.
+- Arsitektur sistem, desain alur, skema database, aturan guardrail, serta keputusan produk ditentukan oleh tim.
+
+### 14.4 Data dan Privasi
+
+- Seluruh data pasien, perawat, kamar, dan barang dalam repositori ini adalah **fiktif**, dibuat khusus untuk demonstrasi.
+- Tidak ada data pribadi nyata yang dikumpulkan atau diproses.
+- Kunci API disimpan pada variabel environment (`.env`) yang dikecualikan dari kontrol versi.
+- Untuk penggunaan dengan data nyata, diperlukan penilaian privasi dan kepatuhan terpisah, terutama karena transkrip percakapan dikirim ke layanan AI pihak ketiga.
+
+### 14.5 Pustaka dan Layanan Pihak Ketiga
+
+Lisensi di bawah diverifikasi dari metadata paket resmi. Rujuk berkas lisensi masing-masing proyek sebagai sumber yang mengikat.
+
+**Frontend**
+
+| Komponen                                                           | Fungsi                              | Lisensi    |
+| ------------------------------------------------------------------ | ----------------------------------- | ---------- |
+| [React](https://react.dev) dan React DOM 18                        | Antarmuka pengguna                  | MIT        |
+| [React Router](https://reactrouter.com) 6                          | Navigasi halaman                    | MIT        |
+| [Vite](https://vitejs.dev) 5 dan `@vitejs/plugin-react`            | Build tool dan dev server           | MIT        |
+| [Tailwind CSS](https://tailwindcss.com) v4 dan `@tailwindcss/vite` | Styling utility-first               | MIT        |
+| [TypeScript](https://www.typescriptlang.org) 5                     | Bahasa pemrograman bertipe          | Apache-2.0 |
+| [serve](https://github.com/vercel/serve)                           | Menyajikan hasil build di container | MIT        |
+
+**Simulator 3D** (dimuat dari `frontend/public/sim/vendor/`)
+
+| Komponen                             | Fungsi                        | Lisensi |
+| ------------------------------------ | ----------------------------- | ------- |
+| [Three.js](https://threejs.org) r128 | Render grafis 3D              | MIT     |
+| OrbitControls (bagian dari Three.js) | Kontrol kamera putar dan zoom | MIT     |
+
+**Backend dan AI**
+
+| Komponen                                                  | Fungsi                     | Lisensi      |
+| --------------------------------------------------------- | -------------------------- | ------------ |
+| [Express](https://expressjs.com) 4                        | Framework HTTP             | MIT          |
+| [`pg`](https://node-postgres.com)                         | Klien PostgreSQL           | MIT          |
+| [`bcryptjs`](https://github.com/dcodeIO/bcrypt.js)        | Hashing kata sandi         | BSD-3-Clause |
+| [`cors`](https://github.com/expressjs/cors)               | Pengaturan CORS            | MIT          |
+| [`dotenv`](https://github.com/motdotla/dotenv)            | Pembacaan file environment | BSD-2-Clause |
+| [`@google/genai`](https://github.com/googleapis/js-genai) | SDK Google Gemini          | Apache-2.0   |
+
+**Infrastruktur dan Layanan**
+
+| Komponen                                                           | Fungsi                        | Catatan                                                   |
+| ------------------------------------------------------------------ | ----------------------------- | --------------------------------------------------------- |
+| [PostgreSQL](https://www.postgresql.org) 16 (`postgres:16-alpine`) | Database                      | PostgreSQL License                                        |
+| [Node.js](https://nodejs.org) 20 (`node:20-alpine`)                | Runtime                       | Image Docker resmi                                        |
+| [Docker](https://www.docker.com) dan Docker Compose                | Kontainerisasi                | -                                                         |
+| [Google Gemini API](https://ai.google.dev)                         | Layanan AI                    | Tunduk pada syarat penggunaan Google; membutuhkan API key |
+| Web Speech API                                                     | Pengenalan dan sintesis suara | Fitur bawaan browser                                      |
+
+**Alat bantu pengujian (opsional, tidak dipakai saat runtime)**
+
+| Komponen                                      | Fungsi                        | Lisensi    |
+| --------------------------------------------- | ----------------------------- | ---------- |
+| [Playwright](https://playwright.dev) (Python) | Menjalankan `verify_click.py` | Apache-2.0 |
+
+### 14.6 Aset dan Konten
+
+- **Model 3D gelang** dibangun secara prosedural dengan kode (geometri Three.js pada `public/sim/js/hardware/parts/`), tanpa berkas model atau tekstur eksternal.
+- Repositori ini **tidak memuat** gambar, berkas font, atau audio berlisensi pihak ketiga. Ikon antarmuka berupa SVG inline. Antarmuka merujuk font _Source Sans 3_ hanya jika terpasang di perangkat pengguna, dengan font sistem sebagai cadangan (tidak ada berkas font yang dibundel atau diunduh).
+- Seluruh teks antarmuka, _system prompt_, dan data demo ditulis oleh tim.
+
+---
+
+## 15. Lisensi
+
+Proyek ini dirilis di bawah [Lisensi MIT](LICENSE).
+
+---
+
+<p align="center">
+  Dibuat oleh <b>Tim Mie Ayam Kopma</b><br>
+  Radhitya Rasta Pramoja · Nicolaus Narindra · Michael Bintang Febryan S.J
+</p>
