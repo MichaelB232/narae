@@ -161,10 +161,16 @@ Setelah aplikasi berjalan (lihat [Bagian 11](#11-instalasi-dan-menjalankan-aplik
 
 ```
 narae/
-├─ docker-compose.yml          Orkestrasi db + backend + frontend
+├─ package.json                Orkestrasi workspace monorepo & build script root
+├─ vercel.json                 Konfigurasi deployment Vercel (rewrites API & static)
+├─ Dockerfile                  Build container backend & agent (context: root)
+├─ docker-compose.yml          Orkestrasi db + backend + frontend lokal
 ├─ .env.example                Template konfigurasi environment
 ├─ ARCHITECTURE.md             Dokumen arsitektur teknis
 ├─ LICENSE                     MIT License
+│
+├─ api/
+│  └─ index.js                 Entry point Serverless Function (Vercel)
 │
 ├─ db/
 │  ├─ init.sql                 Skema final + data demo (dijalankan otomatis saat pertama kali)
@@ -180,21 +186,23 @@ narae/
 ├─ backend/
 │  ├─ Dockerfile
 │  └─ src/
+│     ├─ app.ts                Inisialisasi Express & rute REST (dipakai serverless & lokal)
+│     ├─ index.ts              Entry point Express server lokal / standalone (port 4000)
 │     ├─ config/               Pembacaan environment
-│     ├─ routes/               Pemetaan endpoint REST
+│     ├─ routes/               Pemetaan endpoint REST (termasuk demo.routes.ts)
 │     ├─ controllers/          Validasi request dan respons HTTP
-│     ├─ services/             Logika bisnis (termasuk ai.service.ts)
+│     ├─ services/             Logika bisnis (ai.service.ts, demo.service.ts, task.service.ts, dll.)
 │     ├─ repositories/         Query SQL berparameter
-│     ├─ db/pool.ts            Koneksi PostgreSQL
-│     ├─ types/ dan utils/     Tipe domain dan utilitas tanggal
-│     └─ index.ts              Entry point Express
+│     ├─ db/pool.ts            Koneksi PostgreSQL (dukungan SSL Supabase & lokal)
+│     └─ types/ dan utils/     Tipe domain dan utilitas tanggal
 │
 └─ frontend/
    ├─ Dockerfile
+   ├─ vite.config.ts           Konfigurasi Vite (proxy /api untuk dev lokal & output root dist)
    ├─ src/
-   │  ├─ pages/                Beranda, Keluarga, DetailKeluarga, Login, Pengaturan
+   │  ├─ pages/                Beranda, Keluarga, DetailKeluarga, Login (generator demo), Pengaturan
    │  ├─ components/           Sheet form, timeline, layout, switcher pasien, dll.
-   │  ├─ api/client.ts         Klien HTTP ke backend
+   │  ├─ api/client.ts         Klien HTTP ke backend (default BASE: /api)
    │  └─ tts.ts                Pemilih suara Indonesia untuk Text-to-Speech
    ├─ public/sim/              Simulator gelang 3D (Three.js, aset statis)
    └─ scripts/verify_click.py  Skrip uji klik tombol 3D (Playwright, opsional)
@@ -325,29 +333,31 @@ Respons berisi `responseText`, `escalate`, `latencyMs`, `toolCallsUsed`, `intera
 
 | Kebutuhan                     | Keterangan                                                            |
 | ----------------------------- | --------------------------------------------------------------------- |
-| **Docker dan Docker Compose** | Untuk Opsi A (disarankan)                                             |
-| **Node.js 20+ dan npm**       | Hanya untuk Opsi B (manual)                                           |
+| **Docker dan Docker Compose** | Untuk Opsi A (disarankan untuk lokal dengan DB kontainer)             |
+| **Node.js 20+ dan npm**       | Untuk Opsi B (manual / lokal) dan Opsi C (Vercel)                     |
 | **Gemini API Key**            | Gratis melalui [Google AI Studio](https://aistudio.google.com/apikey) |
 | **Chrome atau Edge**          | Diperlukan untuk Web Speech API                                       |
 
 ### Konfigurasi Environment
 
+Salin berkas template environment:
+
 ```bash
 cp .env.example .env
 ```
 
-| Variabel         | Wajib | Default                                                    | Keterangan                                                        |
-| ---------------- | :---: | ---------------------------------------------------------- | ----------------------------------------------------------------- |
-| `GEMINI_API_KEY` |  Ya   | -                                                          | Kunci API Gemini. Tanpa ini, endpoint AI akan menolak permintaan. |
-| `GEMINI_MODEL`   | Tidak | `gemini-3.5-flash-lite`                                    | Model Gemini yang dipakai                                         |
-| `VITE_API_URL`   | Tidak | `http://localhost:4000/api`                                | URL API yang dipakai browser (dashboard dan simulator)            |
-| `DATABASE_URL`   | Tidak | `postgres://narae:narae_dev_password@localhost:5432/narae` | Sudah diatur otomatis oleh Docker Compose                         |
-| `PORT`           | Tidak | `4000`                                                     | Port backend                                                      |
-| `CORS_ORIGIN`    | Tidak | `*`                                                        | Origin yang diizinkan                                             |
+| Variabel         | Wajib | Default                                                    | Keterangan                                                                                  |
+| ---------------- | :---: | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `GEMINI_API_KEY` |  Ya   | -                                                          | Kunci API Gemini. Tanpa ini, endpoint AI akan menolak permintaan.                           |
+| `GEMINI_MODEL`   | Tidak | `gemini-2.0-flash`                                         | Model Gemini yang dipakai                                                                   |
+| `VITE_API_URL`   | Tidak | `/api` (atau `http://localhost:4000/api`)                  | URL API yang dipakai browser (otomatis satu domain pada Vercel)                             |
+| `DATABASE_URL`   | Tidak | `postgres://narae:narae_dev_password@localhost:5432/narae` | PostgreSQL lokal via Docker, atau URI Supabase Connection Pooler (`aws-0-*.pooler...:6543`)  |
+| `PORT`           | Tidak | `4000`                                                     | Port backend Express                                                                        |
+| `CORS_ORIGIN`    | Tidak | `*`                                                        | Origin yang diizinkan                                                                       |
 
-> File `.env` sudah masuk `.gitignore`. **Jangan pernah meng-commit API key.**
+> Berkas `.env` sudah masuk `.gitignore`. **Jangan pernah meng-commit API key.**
 
-### Opsi A: Docker Compose (Disarankan)
+### Opsi A: Docker Compose (Disarankan untuk Lokal Penuh)
 
 ```bash
 cp .env.example .env
@@ -364,42 +374,60 @@ docker compose up --build
 
 Database akan dibuat dan diisi data demo secara otomatis dari `db/init.sql` pada saat pertama kali dijalankan.
 
-### Opsi B: Manual (untuk Pengembangan)
+### Opsi B: Pengembangan Lokal (Node.js & Workspaces)
 
-**1. Jalankan database**
+Repositori ini telah dikonfigurasi dengan *npm workspaces* di root sehingga Anda dapat membangun dan menjalankan seluruh layanan secara mudah:
 
+**1. Jalankan database** (pilih salah satu):
+* Menggunakan Docker lokal: `docker compose up db -d`
+* Atau gunakan database cloud Supabase dengan mengisi `DATABASE_URL` di `.env` (tanpa perlu menyalakan Docker).
+
+**2. Build seluruh paket dari root**:
 ```bash
-docker compose up db -d
-```
-
-**2. Build paket agent** (wajib, karena backend bergantung padanya)
-
-```bash
-cd agent
-npm install
 npm run build
 ```
+*(Perintah ini otomatis mengompilasi `@narae/agent`, `backend`, dan `frontend` sekaligus).*
 
-**3. Jalankan backend** (port 4000)
-
+**3. Jalankan backend** (port 4000):
 ```bash
-cd backend
-npm install
-npm run build
-npm run dev          # node --watch dist/index.js
-# Opsional, di terminal lain agar TypeScript dikompilasi ulang otomatis:
-npm run watch
+node backend/dist/index.js      # atau: npm run dev --prefix backend
 ```
 
-**4. Jalankan frontend** (port 5173, Hot Module Replacement aktif)
-
+**4. Jalankan frontend** (port 5173, Vite proxy aktif ke port 4000):
 ```bash
-cd frontend
-npm install
-npm run dev
+npm run dev --prefix frontend
 ```
 
-Backend membaca `.env` dari folder `backend/` maupun folder induknya (root proyek).
+Buka browser ke `http://localhost:5173`.
+
+### Opsi C: Deployment Cloud (Vercel Serverless + Supabase 24/7)
+
+Aplikasi NARAE siap dideploy secara fullstack (Frontend + Backend Serverless) ke **Vercel** dengan database **Supabase** tanpa biaya dan aktif 24/7:
+
+1. **Database Supabase**:
+   * Buat proyek baru di [Supabase](https://supabase.com/).
+   * Eksekusi `db/init.sql` pada menu **SQL Editor** Supabase.
+   * Sinkronkan sequence ID awal dengan menjalankan:
+     ```sql
+     SELECT setval('users_id_seq', COALESCE((SELECT MAX(id) FROM users), 1));
+     SELECT setval('patients_id_seq', COALESCE((SELECT MAX(id) FROM patients), 1));
+     SELECT setval('devices_id_seq', COALESCE((SELECT MAX(id) FROM devices), 1));
+     SELECT setval('patient_tasks_id_seq', COALESCE((SELECT MAX(id) FROM patient_tasks), 1));
+     SELECT setval('patient_belongings_id_seq', COALESCE((SELECT MAX(id) FROM patient_belongings), 1));
+     SELECT setval('ai_interaction_logs_id_seq', COALESCE((SELECT MAX(id) FROM ai_interaction_logs), 1));
+     SELECT setval('help_requests_id_seq', COALESCE((SELECT MAX(id) FROM help_requests), 1));
+     ```
+   * Salin URI **Connection Pooler (IPv4 / Mode Transaction port 6543)** dari menu *Connect*.
+
+2. **Deploy ke Vercel**:
+   * Import repositori GitHub ke [Vercel](https://vercel.com/dashboard).
+   * **Root Directory**: Biarkan `./` (root).
+   * **Framework Preset**: `Vite` (atau `Other`).
+   * Tambahkan **Environment Variables** di Vercel:
+     * `DATABASE_URL`: URI Connection Pooler Supabase
+     * `GEMINI_API_KEY`: API Key Google Gemini Anda
+     * `GEMINI_MODEL`: `gemini-2.0-flash`
+   * Klik **Deploy**. Vercel akan otomatis menyajikan Frontend statis dan mengeksekusi Backend Serverless (`/api`) dalam satu domain yang sama.
 
 ### Seed Tambahan (Opsional)
 
@@ -415,7 +443,6 @@ Skrip ini menambahkan inventori dan kegiatan tambahan, dan aman dijalankan berul
 pip install playwright && playwright install chromium
 python3 frontend/scripts/verify_click.py
 ```
-
 ---
 
 ## 12. Pemecahan Masalah
